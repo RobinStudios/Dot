@@ -1,0 +1,107 @@
+{
+  "name": "ai-graphic-designer",
+  "displayName": "AI Graphic Designer",
+  "description": "AI-powered Figma alternative with visual storytelling, brand design, and instant code export",
+  "version": "1.0.0",
+  "publisher": "Dot",
+  "galleryBanner": {
+    "color": "#0a0a0b",
+    "theme": "dark"
+  },
+  "engines": {
+    "vscode": "^1.74.0"
+  },
+  "categories": ["Other", "Visualization"],
+  "keywords": ["ai", "design", "figma", "graphics", "brand", "logo", "typography"],
+  "activationEvents": [
+    "onCommand:aiDesigner.open"
+  ],
+  "main": "./out/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "aiDesigner.open",
+        "title": "Open AI Graphic Designer",
+        "category": "AI Designer",
+        "icon": "$(design)"
+      },
+      {
+        "command": "aiDesigner.gitCommit",
+        "title": "Git Commit",
+        "category": "AI Designer"
+      },
+      {
+        "command": "aiDesigner.gitPush",
+        "title": "Git Push",
+        "category": "AI Designer"
+      },
+      {
+        "command": "aiDesigner.gitPull",
+        "title": "Git Pull",
+        "category": "AI Designer"
+      }
+    ],
+    "menus": {
+      "commandPalette": [
+        {
+          "command": "aiDesigner.open",
+          "title": "AI Designer: Open AI Graphic Designer"
+        }
+      ],
+      "editor/title": [
+        {
+          "command": "aiDesigner.open",
+          "when": "resourceExtname == .tsx || resourceExtname == .jsx",
+          "group": "navigation"
+        }
+      ]
+    },
+    "views": {
+      "explorer": [
+        {
+          "id": "aiDesignerExplorer",
+          "name": "AI Designer",
+          "when": "workspaceFolderCount > 0"
+        }
+      ]
+    },
+    "configuration": {
+      "title": "AI Graphic Designer",
+      "properties": {
+        "aiDesigner.autoSave": {
+          "type": "boolean",
+          "default": true,
+          "description": "Automatically save designs to workspace"
+        },
+        "aiDesigner.defaultExportPath": {
+          "type": "string",
+          "default": "src/components",
+          "description": "Default path for exported components"
+        }
+      }
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "package": "vsce package",
+    "publish": "vsce publish"
+  },
+  "devDependencies": {
+    "@types/vscode": "^1.74.0",
+    "@types/node": "16.x",
+    "typescript": "^4.9.4",
+    "vsce": "^2.15.0",
+    "@vscode/test-electron": "^2.3.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/your-username/ai-graphic-designer.git"
+  },
+  "bugs": {
+    "url": "https://github.com/your-username/ai-graphic-designer/issues"
+  },
+  "homepage": "https://github.com/your-username/ai-graphic-designer#readme",
+  "license": "MIT"
+
+}

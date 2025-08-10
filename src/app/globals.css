@@ -1,0 +1,94 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --obsidian: #0a0a0b;
+  --graphite-mist: #1a1b1e;
+  --clay-gray: #2d2f33;
+  --fog-gray: #9ca3af;
+  --cloud-white: #f8fafc;
+  --ink-blue: #3b82f6;
+  --soft-amber: #fbbf24;
+  --sage-green: #10b981;
+  --rust-red: #ef4444;
+}
+
+[data-theme="light"] {
+  --obsidian: #f8fafc;
+  --graphite-mist: #f1f5f9;
+  --clay-gray: #e2e8f0;
+  --fog-gray: #64748b;
+  --cloud-white: #0a0a0b;
+}
+
+* {
+  box-sizing: border-box;
+  padding: 0;
+  margin: 0;
+}
+
+body {
+  background: var(--obsidian);
+  color: var(--cloud-white);
+  font-family: system-ui, sans-serif;
+  overflow: hidden;
+}
+
+.canvas-grid {
+  background-image: 
+    radial-gradient(circle at 1px 1px, var(--clay-gray) 1px, transparent 0);
+  background-size: 20px 20px;
+  opacity: 0.1;
+}
+
+.ai-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.25rem 0.5rem;
+  background: var(--soft-amber);
+  color: var(--obsidian);
+  border-radius: 16px;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 150ms ease;
+}
+
+.ai-chip:hover {
+  transform: scale(1.05);
+  box-shadow: 0 4px 12px rgba(251, 191, 36, 0.3);
+}
+
+.btn-primary {
+  background: var(--ink-blue);
+  color: var(--cloud-white);
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 150ms ease;
+}
+
+.btn-primary:hover {
+  background: #2563eb;
+  transform: translateY(-1px);
+}
+
+.btn-secondary {
+  background: var(--clay-gray);
+  color: var(--fog-gray);
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 150ms ease;
+}
+
+.btn-secondary:hover {
+  background: #374151;
+  color: var(--cloud-white);
+}
