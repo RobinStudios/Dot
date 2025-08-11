@@ -72,37 +72,62 @@ export async function POST(request: NextRequest) {
 
     const sanitizedPrompt = sanitizeInput(prompt);
     
-    const aiPrompt = `Generate a complete design specification for: ${sanitizedPrompt}
-Style: ${style}
-Layout: ${layout}
-Color Scheme: ${colorScheme}
-Typography: ${typography}
 
-Return JSON with:
+    // Enhanced prompt for deeply varied, theme-specific, fully editable mockups
+    const aiPrompt = `You are a world-class UI/UX designer and Figma expert. Given the following requirements, generate 10 deeply unique, theme-specific, and fully editable web or app design mockups. Each mockup must:
+- Be maximally different from the others in layout, color, typography, style, iconography, and (if possible) animation/sound.
+- Be production-ready, with all properties editable (as in Figma: position, size, color, font, border, shadow, radius, etc.).
+- Use modern, creative, and accessible design patterns.
+- Each mockup should be a separate object in a JSON array, with the following structure:
 {
+  "id": "unique-id",
+  "name": "Short descriptive name",
   "elements": [
     {
       "id": "unique-id",
-      "type": "text|rectangle|ellipse",
+      "type": "text|rectangle|ellipse|icon|image|button|input|custom",
       "x": 100,
       "y": 100,
       "width": 200,
       "height": 50,
       "fill": "#color",
       "text": "content",
-      "fontSize": 16
+      "fontSize": 16,
+      "fontFamily": "",
+      "color": "#color",
+      "borderRadius": 0,
+      "borderWidth": 0,
+      "borderColor": "#color",
+      "shadow": "",
+      "opacity": 1,
+      "icon": "optional icon name",
+      "imageUrl": "optional image url",
+      "animation": "optional animation description",
+      "sound": "optional sound description"
     }
   ],
   "layout": {"type": "${layout}", "columns": 12},
-  "colorScheme": {"primary": "#3b82f6", "secondary": "#64748b"},
-  "typography": {"fontFamily": "Inter", "fontSize": 16}
-}`;
+  "colorScheme": {"primary": "#3b82f6", "secondary": "#64748b", "palette": ["#...", "#..."]},
+  "typography": {"fontFamily": "Inter", "fontSize": 16, "weights": [400, 700]},
+  "theme": "${style}",
+  "description": "Short description of the design's unique approach."
+}
+
+Requirements:
+- Prompt: ${sanitizedPrompt}
+- Style/Theme: ${style}
+- Layout: ${layout}
+- Color Scheme: ${colorScheme}
+- Typography: ${typography}
+
+Return a JSON array of 10+ mockups, each as described above. Maximize diversity and editability. Do not repeat any design. Do not include any explanation, only the JSON array.`;
+
 
     const command = new InvokeModelCommand({
       modelId: 'anthropic.claude-3-haiku-20240307-v1:0',
       body: JSON.stringify({
         anthropic_version: 'bedrock-2023-05-31',
-        max_tokens: 2000,
+        max_tokens: 4000,
         messages: [{ role: 'user', content: aiPrompt }],
       }),
       contentType: 'application/json',
@@ -111,51 +136,59 @@ Return JSON with:
 
     const response = await client.send(command);
     const result = JSON.parse(new TextDecoder().decode(response.body));
-    
-    let designData;
+
+    let mockups: any[] = [];
     try {
-      designData = JSON.parse(result.content[0].text);
+      mockups = JSON.parse(result.content[0].text);
+      if (!Array.isArray(mockups) || mockups.length < 1) throw new Error('Not an array');
     } catch {
-      // Fallback design if AI response is invalid
-      designData = {
+      // Fallback: generate 10 simple mockups with varied color and layout
+      mockups = Array.from({ length: 10 }).map((_, i) => ({
+        id: `fallback-${i}-${Date.now()}`,
+        name: `Fallback Mockup ${i + 1}`,
         elements: [
           {
-            id: `text-${Date.now()}`,
+            id: `text-${i}-${Date.now()}`,
             type: 'text',
-            x: 100,
-            y: 100,
+            x: 100 + i * 10,
+            y: 100 + i * 10,
             width: 300,
             height: 50,
-            text: sanitizedPrompt,
+            text: `${sanitizedPrompt} (Fallback ${i + 1})`,
             fontSize: 24,
-            fill: '#1f2937'
+            fill: `#${((1 << 24) * Math.random() | 0).toString(16)}`
           }
         ],
         layout: { type: layout, columns: 12 },
-        colorScheme: { primary: '#3b82f6', secondary: '#64748b' },
-        typography: { fontFamily: 'Inter', fontSize: 16 }
-      };
+        colorScheme: { primary: `#${((1 << 24) * Math.random() | 0).toString(16)}`, secondary: `#${((1 << 24) * Math.random() | 0).toString(16)}` },
+        typography: { fontFamily: 'Inter', fontSize: 16 },
+        theme: style,
+        description: `Fallback mockup ${i + 1}`
+      }));
     }
 
-    // Save to project if specified
-    if (projectId) {
+
+    // Save the first mockup to project if specified (or all, if desired)
+    if (projectId && mockups.length > 0) {
       try {
+        // Optionally, save all mockups. Here, just saving the first for backward compatibility.
         await projectService.saveDesign(projectId, {
-          name: `AI Design - ${sanitizedPrompt.slice(0, 30)}`,
+          project_id: projectId,
+          name: mockups[0].name || `AI Design - ${sanitizedPrompt.slice(0, 30)}`,
           prompt: sanitizedPrompt,
-          elements: designData.elements,
-          layout: designData.layout,
-          color_scheme: designData.colorScheme,
-          typography: designData.typography,
+          elements: mockups[0].elements,
+          layout: mockups[0].layout,
+          color_scheme: mockups[0].colorScheme,
+          typography: mockups[0].typography,
         });
       } catch (dbError) {
         console.error('Database save failed, continuing with response:', dbError);
       }
     }
 
-    return NextResponse.json({ 
+    return NextResponse.json({
       success: true,
-      design: designData,
+      mockups,
       prompt: sanitizedPrompt
     });
     

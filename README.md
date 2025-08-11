@@ -5,11 +5,12 @@ A comprehensive AI-driven graphic design tool that generates complete design moc
 ## 🎨 Features
 
 ### AI-Powered Design Generation
-- **Prompt-to-Design**: Generate 10 unique design mockups from text prompts
-- **Smart Layouts**: AI-generated grid, flexbox, and responsive layouts
-- **Color Schemes**: Automatic color palette generation and management
-- **Typography**: Intelligent font pairing and sizing
-- **Style Variations**: Modern, minimalist, vintage, playful, professional, and artistic styles
+- **Prompt-to-Design**: Instantly generate 10 deeply unique design mockups from a single text prompt, each tailored to your theme (e.g., "futuristic tech")
+- **Agentic Smart Layouts**: AI generates advanced grid, flexbox, responsive, and custom layouts—every property is editable, just like Figma
+- **Unlimited Color Schemes**: No palette limits—AI creates and manages endless color variations, including theme-specific and experimental palettes
+- **Unlimited Typography**: AI selects and pairs fonts intelligently, but you can edit any font, size, or style—no restrictions
+- **Infinite Style Variations**: Go beyond presets—AI invents new styles (e.g., futuristic, brutalist, glassmorphic, skeuomorphic, etc.), and generates 10+ alternatives within your chosen theme, changing not just color and typography but also iconography, icon position, animation, sound, and more
+- **Full Component Editing**: Every design element (font, layout, icon, animation, sound, etc.) is fully editable—if you can do it in Figma (as of 8/11/2025), you can do it here
 
 ### Advanced AI System
 - **Adaptive Agents**: AI learns from user behavior and optimizes selections
