@@ -24,25 +24,14 @@ export function AIPromptPanel({ isOpen, onClose }: AIPromptPanelProps) {
 
   const handleGenerate = async () => {
     if (!prompt.trim()) return
-    
     try {
-      const response = await fetch('/api/agents/execute', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          taskType: 'design_generation',
-          input: {
-            prompt: prompt.trim(),
-            style,
-            layout,
-            colorScheme,
-            typography,
-          }
-        }),
+      await generateMockups({
+        prompt: prompt.trim(),
+        style,
+        layout,
+        colorScheme,
+        typography,
       })
-      
-      const { result } = await response.json()
-      await generateMockups(result)
       onClose()
     } catch (error) {
       console.error('Generation failed:', error)
@@ -90,19 +79,15 @@ export function AIPromptPanel({ isOpen, onClose }: AIPromptPanelProps) {
   return (
     <AnimatePresence>
       {isOpen && (
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4"
+        <div
+          style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 50, padding: '1rem' }}
           onClick={onClose}
         >
           <motion.div
             initial={{ scale: 0.95, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             exit={{ scale: 0.95, opacity: 0 }}
-            className="bg-white dark:bg-secondary-800 rounded-xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-hidden"
-            onClick={(e) => e.stopPropagation()}
+            style={{ background: 'white', borderRadius: '1rem', boxShadow: '0 8px 32px rgba(0,0,0,0.2)', width: '100%', maxWidth: '32rem', maxHeight: '90vh', overflow: 'hidden' }}
           >
             {/* Header */}
             <div className="p-6 border-b border-secondary-200 dark:border-secondary-700">
@@ -288,7 +273,7 @@ export function AIPromptPanel({ isOpen, onClose }: AIPromptPanelProps) {
               onClose={() => setShowAgentManager(false)}
             />
           </motion.div>
-        </motion.div>
+        </div>
       )}
     </AnimatePresence>
   )

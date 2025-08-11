@@ -2,6 +2,14 @@ import { create } from 'zustand'
 import { devtools } from 'zustand/middleware'
 import { DesignMockup, DesignElement, Layout, Typography, ColorScheme } from '@/types'
 
+interface GenerateMockupsParams {
+  prompt: string;
+  style?: string;
+  layout?: string;
+  colorScheme?: string;
+  typography?: string;
+}
+
 interface DesignState {
   // Current state
   currentMockup: DesignMockup | null
@@ -25,7 +33,7 @@ interface DesignState {
   setCollaborating: (isCollaborating: boolean) => void
   
   // AI Generation
-  generateMockups: (prompt: string) => Promise<void>
+  generateMockups: (params: GenerateMockupsParams) => Promise<void>
   
   // Collaboration
   startCollaboration: () => void
@@ -193,40 +201,22 @@ export const useDesignStore = create<DesignState>()(
       setCollaborating: (isCollaborating) => set({ isCollaborating }),
 
       // AI Generation
-      generateMockups: async (prompt: string) => {
+      generateMockups: async ({ prompt, style, layout, colorScheme, typography }: { prompt: string, style?: string, layout?: string, colorScheme?: string, typography?: string }) => {
         set({ isGenerating: true })
-        
         try {
-          // Simulate AI generation - in real app, this would call an AI service
-          const mockups: DesignMockup[] = []
-          
-          for (let i = 0; i < 10; i++) {
-            const mockup = createDefaultMockup(prompt)
-            mockup.title = `Design ${i + 1} - ${prompt.slice(0, 20)}...`
-            mockup.description = `AI-generated design based on: ${prompt}`
-            
-            // Add some sample elements
-            mockup.elements = [
-              {
-                id: `text-${i}-1`,
-                type: 'text',
-                position: { x: 100, y: 100 },
-                size: { width: 300, height: 50 },
-                style: { color: mockup.colorScheme.text },
-                content: `Sample Text ${i + 1}`,
-              },
-              {
-                id: `shape-${i}-1`,
-                type: 'shape',
-                position: { x: 100, y: 200 },
-                size: { width: 200, height: 150 },
-                style: { backgroundColor: mockup.colorScheme.primary },
-              },
-            ]
-            
-            mockups.push(mockup)
-          }
-          
+          const response = await fetch('/api/generate', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ prompt, style: style || 'modern', layout: layout || 'grid', colorScheme: colorScheme || 'blue', typography: typography || 'clean' })
+          });
+          const data = await response.json();
+          if (!data.mockups || !Array.isArray(data.mockups)) throw new Error('No mockups returned');
+          // Convert string dates to Date objects if needed
+          const mockups = data.mockups.map((m: any) => ({
+            ...m,
+            createdAt: m.createdAt ? new Date(m.createdAt) : new Date(),
+            updatedAt: m.updatedAt ? new Date(m.updatedAt) : new Date(),
+          }));
           set((state) => ({
             mockups: [...state.mockups, ...mockups],
             currentMockup: mockups[0],
