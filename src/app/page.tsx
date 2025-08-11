@@ -15,6 +15,8 @@ import { MCPPluginPanel } from '@/components/mcp-plugin-panel'
 import { WebsiteCopier } from '@/components/website-copier'
 import { BoltDisplayArea } from '@/components/bolt-display-area'
 import { MobileLayout } from '@/components/mobile-layout'
+import { MobileCollaborationProvider } from '@/components/mobile-collaboration-provider'
+import { CollaborativeVoting } from '@/components/collaborative-voting'
 import { FigmaDesignEditor } from '@/components/figma-design-editor'
 import { FigmaPropertiesPanel } from '@/components/figma-properties-panel'
 import { FigmaLayersPanel } from '@/components/figma-layers-panel'
@@ -46,6 +48,7 @@ function HomeContent() {
   const [showApiManagement, setShowApiManagement] = useState(false)
   const [showSupabase, setShowSupabase] = useState(false)
   const [showMultiAI, setShowMultiAI] = useState(false)
+  const [showVoting, setShowVoting] = useState(false)
   const [brandContext, setBrandContext] = useState({
     brandName: 'My Brand',
     industry: 'Technology',
@@ -167,79 +170,147 @@ function HomeContent() {
         <div className="flex-1 flex overflow-hidden">
           {/* Mobile Layout */}
           <div className="block md:hidden w-full">
-            <MobileLayout
-              showTemplates={showTemplates}
-              onToggleTemplates={() => setShowTemplates(!showTemplates)}
-              showSidebar={showCollaboration || showAIGenerator || showHybridGenerator || showEffects || showMCPPlugins || showWebsiteCopier}
-              onToggleSidebar={() => {
-                // Toggle the most recently opened sidebar
-                if (showCollaboration) setShowCollaboration(false)
-                else if (showAIGenerator) setShowAIGenerator(false)
-                else if (showHybridGenerator) setShowHybridGenerator(false)
-                else if (showEffects) setShowEffects(false)
-                else if (showMCPPlugins) setShowMCPPlugins(false)
-                else if (showWebsiteCopier) setShowWebsiteCopier(false)
-                else setShowAIGenerator(true) // Default to AI generator
-              }}
-              templateContent={
-                <BoltIntegration 
-                  onTemplateSelect={(template) => {
-                    setSelectedTemplate(template)
-                    setShowTemplates(false)
-                  }}
+            <MobileCollaborationProvider roomId={selectedTemplate?.id || 'default'} userId={user?.id || 'anon'} userName={user?.name || 'Anonymous'}>
+              <MobileLayout
+                showTemplates={showTemplates}
+                onToggleTemplates={() => setShowTemplates(!showTemplates)}
+                showSidebar={showCollaboration || showAIGenerator || showHybridGenerator || showEffects || showMCPPlugins || showWebsiteCopier}
+                onToggleSidebar={() => {
+                  if (showCollaboration) setShowCollaboration(false)
+                  else if (showAIGenerator) setShowAIGenerator(false)
+                  else if (showHybridGenerator) setShowHybridGenerator(false)
+                  else if (showEffects) setShowEffects(false)
+                  else if (showMCPPlugins) setShowMCPPlugins(false)
+                  else if (showWebsiteCopier) setShowWebsiteCopier(false)
+                  else setShowAIGenerator(true)
+                }}
+                templateContent={
+                  <BoltIntegration 
+                    onTemplateSelect={(template) => {
+                      setSelectedTemplate(template)
+                      setShowTemplates(false)
+                    }}
+                  />
+                }
+                sidebarContent={
+                  <>
+                    {showCollaboration && user && <CollaborationPanel />}
+                    {showAIGenerator && (
+                      <AIProviderSelector 
+                        onGenerate={handleAIGenerate}
+                        isGenerating={isGenerating}
+                      />
+                    )}
+                    {showHybridGenerator && (
+                      <HybridDesignGenerator 
+                        onDesignGenerated={(design) => {
+                          const newTemplate = {
+                            id: `hybrid-${Date.now()}`,
+                            name: `Hybrid AI Design`,
+                            category: 'landing' as const,
+                            preview: '',
+                            code: design.code,
+                            aiPrompts: design.imagePrompts || []
+                          }
+                          setSelectedTemplate(newTemplate)
+                          setShowTemplates(false)
+                          setShowHybridGenerator(false)
+                        }}
+                      />
+                    )}
+                    {showEffects && (
+                      <CreativeEffectsPanel 
+                        onApplyEffect={(effect, intensity) => {
+                          console.log('Applying effect:', effect.name, intensity)
+                        }}
+                      />
+                    )}
+                    {showMCPPlugins && <MCPPluginPanel />}
+                    {showWebsiteCopier && (
+                      <WebsiteCopier 
+                        onWebsiteCopied={(template) => {
+                          setSelectedTemplate(template)
+                          setShowTemplates(false)
+                          setShowWebsiteCopier(false)
+                        }}
+                      />
+                    )}
+                  </>
+                }
+              >
+                <BoltDisplayArea 
+                  selectedTemplate={selectedTemplate}
+                  onTemplateChange={setSelectedTemplate}
                 />
-              }
-              sidebarContent={
-                <>
-                  {showCollaboration && user && <CollaborationPanel />}
-                  {showAIGenerator && (
-                    <AIProviderSelector 
-                      onGenerate={handleAIGenerate}
-                      isGenerating={isGenerating}
-                    />
-                  )}
-                  {showHybridGenerator && (
-                    <HybridDesignGenerator 
-                      onDesignGenerated={(design) => {
-                        const newTemplate = {
-                          id: `hybrid-${Date.now()}`,
-                          name: `Hybrid AI Design`,
-                          category: 'landing' as const,
-                          preview: '',
-                          code: design.code,
-                          aiPrompts: design.imagePrompts || []
-                        }
-                        setSelectedTemplate(newTemplate)
-                        setShowTemplates(false)
-                        setShowHybridGenerator(false)
-                      }}
-                    />
-                  )}
-                  {showEffects && (
-                    <CreativeEffectsPanel 
-                      onApplyEffect={(effect, intensity) => {
-                        console.log('Applying effect:', effect.name, intensity)
-                      }}
-                    />
-                  )}
-                  {showMCPPlugins && <MCPPluginPanel />}
-                  {showWebsiteCopier && (
-                    <WebsiteCopier 
-                      onWebsiteCopied={(template) => {
-                        setSelectedTemplate(template)
-                        setShowTemplates(false)
-                        setShowWebsiteCopier(false)
-                      }}
-                    />
-                  )}
-                </>
-              }
-            >
-              <BoltDisplayArea 
-                selectedTemplate={selectedTemplate}
-                onTemplateChange={setSelectedTemplate}
-              />
-            </MobileLayout>
+                {/* Floating Action Buttons for Collaboration & Voting */}
+                <div className="fixed bottom-6 right-6 flex flex-col gap-4 z-50">
+                  <button
+                    className="bg-blue-600 text-white rounded-full shadow-lg p-4 text-xl"
+                    style={{ minWidth: 56, minHeight: 56 }}
+                    onClick={() => setShowCollaboration((v) => !v)}
+                  >
+                    👥
+                  </button>
+                  <button
+                    className="bg-pink-600 text-white rounded-full shadow-lg p-4 text-xl"
+                    style={{ minWidth: 56, minHeight: 56 }}
+                    onClick={() => setShowAIGenerator((v) => !v)}
+                  >
+                    🤖
+                  </button>
+                  <button
+                    className="bg-green-600 text-white rounded-full shadow-lg p-4 text-xl"
+                    style={{ minWidth: 56, minHeight: 56 }}
+                    onClick={() => setShowHybridGenerator((v) => !v)}
+                  >
+                    🧬
+                  </button>
+                  <button
+                    className="bg-yellow-600 text-white rounded-full shadow-lg p-4 text-xl"
+                    style={{ minWidth: 56, minHeight: 56 }}
+                    onClick={() => setShowEffects((v) => !v)}
+                  >
+                    ✨
+                  </button>
+                  <button
+                    className="bg-purple-600 text-white rounded-full shadow-lg p-4 text-xl"
+                    style={{ minWidth: 56, minHeight: 56 }}
+                    onClick={() => setShowMCPPlugins((v) => !v)}
+                  >
+                    🧩
+                  </button>
+                  <button
+                    className="bg-gray-800 text-white rounded-full shadow-lg p-4 text-xl"
+                    style={{ minWidth: 56, minHeight: 56 }}
+                    onClick={() => setShowWebsiteCopier((v) => !v)}
+                  >
+                    🌐
+                  </button>
+                  {/* Voting Panel Button */}
+                  <button
+                    className="bg-red-600 text-white rounded-full shadow-lg p-4 text-xl"
+                    style={{ minWidth: 56, minHeight: 56 }}
+                    onClick={() => setShowVoting((v) => !v)}
+                  >
+                    🗳️
+                  </button>
+                </div>
+                {/* Voting Modal/Bottom Sheet */}
+                {showVoting && (
+                  <div className="fixed inset-0 bg-black/40 flex items-end md:items-center justify-center z-50" onClick={() => setShowVoting(false)}>
+                    <div className="bg-white dark:bg-gray-900 w-full md:w-2/3 max-w-lg rounded-t-2xl md:rounded-2xl p-4 shadow-lg" onClick={e => e.stopPropagation()}>
+                      <CollaborativeVoting 
+                        mockups={MOCKUP_TEMPLATES}
+                        teamId={selectedTemplate?.id || 'default'}
+                        userId={user?.id || 'anon'}
+                        userName={user?.name || 'Anonymous'}
+                      />
+                      <button className="mt-4 w-full py-2 rounded bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-100" onClick={() => setShowVoting(false)}>Close</button>
+                    </div>
+                  </div>
+                )}
+              </MobileLayout>
+            </MobileCollaborationProvider>
           </div>
           
           {/* Desktop Layout */}

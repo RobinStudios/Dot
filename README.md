@@ -26,11 +26,11 @@ A comprehensive AI-driven graphic design tool that generates complete design moc
 - **Design System**: Centralized color, typography, spacing, and shadow management
 
 ### Collaboration & Workflow
-- **Real-time Collaboration**: Multi-user editing with live updates
-- **Version Control**: Design history and version management
-- **Team Workspaces**: Shared projects and design systems
-- **Comments & Feedback**: In-app commenting system
-- **Collaborative Voting**: Team voting on design preferences
+**Real-time Collaboration**: Multi-user editing with live updates
+**Version Control**: Design history and version management
+**Team Workspaces**: Shared projects and design systems
+**Comments & Feedback**: In-app commenting system
+**AI-Powered Design Rating**: Automatic design critique and suggestions from ChatGPT-5
 
 ### Cross-Platform
 - **Web Application**: Full-featured browser experience
