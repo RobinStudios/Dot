@@ -1,3 +1,5 @@
+
+import * as React from 'react'
 'use client'
 
 import { useRef, useEffect, useState } from 'react'
@@ -6,13 +8,61 @@ import { useDesignStore } from '@/store/design-store'
 import { DesignElement } from '@/types'
 import { ElementRenderer } from './element-renderer'
 import { CanvasGrid } from './canvas-grid'
+import { DesignHistoryPanel } from './design-history-panel'
 
-export function DesignCanvas() {
+  const [showHistory, setShowHistory] = useState(false)
   const canvasRef = useRef<HTMLDivElement>(null)
-  const { currentMockup, selectedElements, selectElement, deselectElement, clearSelection } = useDesignStore()
+  const { currentMockup, selectedElements, selectElement, deselectElement, clearSelection, updateElement } = useDesignStore()
   const [zoom, setZoom] = useState(1)
   const [pan, setPan] = useState({ x: 0, y: 0 })
   const [isDragging, setIsDragging] = useState(false)
+  const [draggedId, setDraggedId] = useState<string | null>(null)
+  const [dragOffset, setDragOffset] = useState<{ x: number; y: number }>({ x: 0, y: 0 })
+  const [snapToGrid, setSnapToGrid] = useState(true)
+  const gridSize = 20
+
+  // Drag handlers
+  const handleElementMouseDown = (e: React.MouseEvent<HTMLDivElement, MouseEvent>, elementId: string) => {
+    e.stopPropagation();
+    if (!currentMockup) return;
+    const element = currentMockup.elements.find((el) => el.id === elementId);
+    if (!element) return;
+    setDraggedId(elementId);
+    setIsDragging(true);
+    setDragOffset({
+      x: e.clientX - element.position.x,
+      y: e.clientY - element.position.y,
+    });
+    // Select the element if not already selected
+    if (!selectedElements.includes(elementId)) {
+      clearSelection();
+      selectElement(elementId);
+    }
+  };
+
+  useEffect(() => {
+    if (!isDragging || !draggedId) return;
+    const handleMouseMove = (e: MouseEvent) => {
+      if (!currentMockup) return;
+      let x = (e.clientX - dragOffset.x);
+      let y = (e.clientY - dragOffset.y);
+      if (snapToGrid) {
+        x = Math.round(x / gridSize) * gridSize;
+        y = Math.round(y / gridSize) * gridSize;
+      }
+      updateElement(draggedId, { position: { ...currentMockup.elements.find((el: DesignElement) => el.id === draggedId)?.position, x, y } });
+    };
+    const handleMouseUp = () => {
+      setIsDragging(false);
+      setDraggedId(null);
+    };
+    window.addEventListener('mousemove', handleMouseMove);
+    window.addEventListener('mouseup', handleMouseUp);
+    return () => {
+      window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('mouseup', handleMouseUp);
+    };
+  }, [isDragging, draggedId, dragOffset, snapToGrid, currentMockup, updateElement]);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -25,13 +75,13 @@ export function DesignCanvas() {
     return () => window.removeEventListener('keydown', handleKeyDown)
   }, [clearSelection])
 
-  const handleCanvasClick = (e: React.MouseEvent) => {
+  const handleCanvasClick = (e: React.MouseEvent<HTMLDivElement, MouseEvent>) => {
     if (e.target === canvasRef.current) {
       clearSelection()
     }
   }
 
-  const handleElementClick = (e: React.MouseEvent, elementId: string) => {
+  const handleElementClick = (e: React.MouseEvent<HTMLDivElement, MouseEvent>, elementId: string) => {
     e.stopPropagation()
     
     if (e.metaKey || e.ctrlKey) {
@@ -99,7 +149,33 @@ export function DesignCanvas() {
         >
           Reset
         </button>
+        <button
+          onClick={() => setShowHistory(true)}
+          className="text-xs px-2 py-1 bg-secondary-200 dark:bg-secondary-700 rounded hover:bg-secondary-300 dark:hover:bg-secondary-600 ml-2"
+        >
+          History
+        </button>
       </div>
+      {/* Design History Modal */}
+      {showHistory && currentMockup && (
+        <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50">
+          <div className="bg-white dark:bg-secondary-900 rounded-lg shadow-xl w-[400px] max-h-[80vh] overflow-y-auto relative">
+            <button
+              className="absolute top-2 right-2 text-xs px-2 py-1 bg-secondary-200 dark:bg-secondary-700 rounded hover:bg-secondary-300 dark:hover:bg-secondary-600"
+              onClick={() => setShowHistory(false)}
+            >
+              Close
+            </button>
+            <DesignHistoryPanel
+              designId={currentMockup.id}
+              onRestore={(mockup) => {
+                // Optionally update the current mockup in the store
+                setShowHistory(false)
+              }}
+            />
+          </div>
+        </div>
+      )}
 
       {/* Canvas */}
       <div
@@ -122,19 +198,31 @@ export function DesignCanvas() {
 
           {/* Design Elements */}
           {currentMockup.elements.map((element) => (
-            <ElementRenderer
+            <div
               key={element.id}
-              element={element}
-              isSelected={selectedElements.includes(element.id)}
-              onClick={(e) => handleElementClick(e, element.id)}
-            />
+              style={{
+                zIndex: selectedElements.includes(element.id) ? 10 : 1,
+                position: 'absolute',
+                left: element.position.x,
+                top: element.position.y,
+                width: element.size.width,
+                height: element.size.height,
+              }}
+              onMouseDown={(e) => handleElementMouseDown(e, element.id)}
+            >
+              <ElementRenderer
+                element={element}
+                isSelected={selectedElements.includes(element.id)}
+                onClick={(e) => handleElementClick(e, element.id)}
+              />
+            </div>
           ))}
 
           {/* Selection Overlay */}
           {selectedElements.length > 0 && (
             <div className="absolute inset-0 pointer-events-none">
-              {selectedElements.map((elementId) => {
-                const element = currentMockup.elements.find((e) => e.id === elementId)
+              {selectedElements.map((elementId: string) => {
+                const element = currentMockup.elements.find((e: DesignElement) => e.id === elementId)
                 if (!element) return null
 
                 return (
@@ -164,6 +252,7 @@ export function DesignCanvas() {
           <div>Canvas: {currentMockup.layout.columns}×{currentMockup.layout.rows}</div>
           <div>Elements: {currentMockup.elements.length}</div>
           <div>Selected: {selectedElements.length}</div>
+          <div>Grid Snap: {snapToGrid ? 'On' : 'Off'}</div>
         </div>
       </div>
     </div>

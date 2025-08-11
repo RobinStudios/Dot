@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Graphic Designer</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <style>
+        :root {
+            --obsidian: #0a0a0b;
+            --graphite-mist: #1a1b1e;
+            --clay-gray: #2d2f33;
+            --fog-gray: #9ca3af;
+            --cloud-white: #f8fafc;
+            --ink-blue: #3b82f6;
+        }
+        
+        body {
+            background: var(--obsidian);
+            color: var(--cloud-white);
+            font-family: system-ui, sans-serif;
+            margin: 0;
+            padding: 0;
+        }
+        
+        .btn-primary {
+            background: var(--ink-blue);
+            color: var(--cloud-white);
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 6px;
+            cursor: pointer;
+        }
+        
+        .btn-secondary {
+            background: var(--clay-gray);
+            color: var(--fog-gray);
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 6px;
+            cursor: pointer;
+        }
+        
+        .ai-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.25rem;
+            padding: 0.25rem 0.5rem;
+            background: #fbbf24;
+            color: var(--obsidian);
+            border-radius: 16px;
+            font-size: 12px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <div id="root">
+        <!-- AI Graphic Designer Interface -->
+        <div class="h-screen flex flex-col" style="background: var(--obsidian); color: var(--cloud-white);">
+            <!-- Top Bar -->
+            <div class="h-14 flex items-center justify-between px-6 border-b" style="background: var(--graphite-mist); border-color: var(--clay-gray);">
+                <div class="flex items-center gap-4">
+                    <h1 class="text-lg font-semibold">🎨 AI Graphic Designer</h1>
+                </div>
+                
+                <div class="flex items-center gap-2">
+                    <input type="text" placeholder="Type a command..." class="px-3 py-1 rounded-lg text-sm" style="background: var(--clay-gray); border: 1px solid var(--fog-gray); color: var(--cloud-white);">
+                </div>
+                
+                <div class="flex items-center gap-2">
+                    <button class="btn-primary text-sm">Login</button>
+                </div>
+            </div>
+
+            <!-- Main Content -->
+            <div class="flex-1 flex overflow-hidden">
+                <!-- Templates Sidebar -->
+                <div class="w-80 border-r" style="border-color: var(--clay-gray); background: var(--graphite-mist);">
+                    <div class="p-4 border-b" style="border-color: var(--clay-gray);">
+                        <h2 class="text-lg font-semibold mb-4">Quick Start Templates</h2>
+                        
+                        <input type="text" placeholder="Search templates..." class="w-full p-2 border rounded-lg mb-4" style="background: var(--clay-gray); border-color: var(--fog-gray); color: var(--cloud-white);">
+                        
+                        <div class="flex gap-2 flex-wrap">
+                            <button class="px-3 py-1 rounded-full text-sm btn-primary">All</button>
+                            <button class="px-3 py-1 rounded-full text-sm btn-secondary">Landing</button>
+                            <button class="px-3 py-1 rounded-full text-sm btn-secondary">Dashboard</button>
+                        </div>
+                    </div>
+
+                    <div class="flex-1 overflow-y-auto p-4">
+                        <div class="grid grid-cols-1 gap-4">
+                            <!-- Template Card -->
+                            <div class="border rounded-lg overflow-hidden" style="background: var(--obsidian); border-color: var(--clay-gray);">
+                                <div class="aspect-video flex items-center justify-center" style="background: var(--clay-gray);">
+                                    <span style="color: var(--fog-gray);">SaaS Landing Preview</span>
+                                </div>
+                                <div class="p-4">
+                                    <h3 class="font-semibold mb-2">SaaS Landing Page</h3>
+                                    <div class="flex gap-2 mb-3">
+                                        <button class="flex-1 btn-primary text-sm">Use Template</button>
+                                        <button class="btn-secondary text-sm">Preview</button>
+                                    </div>
+                                    <div class="space-y-2">
+                                        <p class="text-xs" style="color: var(--fog-gray);">Quick AI Edits:</p>
+                                        <div class="flex gap-1">
+                                            <span class="ai-chip text-xs">Change colors</span>
+                                            <span class="ai-chip text-xs">Add features</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- More Template Cards -->
+                            <div class="border rounded-lg overflow-hidden" style="background: var(--obsidian); border-color: var(--clay-gray);">
+                                <div class="aspect-video flex items-center justify-center" style="background: var(--clay-gray);">
+                                    <span style="color: var(--fog-gray);">E-commerce Preview</span>
+                                </div>
+                                <div class="p-4">
+                                    <h3 class="font-semibold mb-2">E-commerce Product Page</h3>
+                                    <div class="flex gap-2 mb-3">
+                                        <button class="flex-1 btn-primary text-sm">Use Template</button>
+                                        <button class="btn-secondary text-sm">Preview</button>
+                                    </div>
+                                    <div class="space-y-2">
+                                        <p class="text-xs" style="color: var(--fog-gray);">Quick AI Edits:</p>
+                                        <div class="flex gap-1">
+                                            <span class="ai-chip text-xs">Add reviews</span>
+                                            <span class="ai-chip text-xs">Change product</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Main Display Area -->
+                <div class="flex-1 flex flex-col">
+                    <!-- Display Header -->
+                    <div class="h-12 flex items-center justify-between px-4 border-b" style="background: var(--graphite-mist); border-color: var(--clay-gray);">
+                        <div class="flex gap-2">
+                            <button class="px-3 py-1 rounded text-sm btn-primary">👁️ Preview</button>
+                            <button class="px-3 py-1 rounded text-sm btn-secondary">💻 Source Code</button>
+                        </div>
+                        
+                        <div class="flex gap-2">
+                            <button class="btn-secondary text-sm">💾 Save to Supabase</button>
+                            <button class="btn-secondary text-sm">Push to GitHub</button>
+                            <button class="btn-primary text-sm">🚀 Deploy</button>
+                        </div>
+                    </div>
+
+                    <!-- Content Display -->
+                    <div class="flex-1 flex items-center justify-center" style="background: var(--obsidian);">
+                        <div class="text-center">
+                            <div class="text-6xl mb-4">🎨</div>
+                            <h2 class="text-2xl font-semibold mb-2">AI Graphic Designer</h2>
+                            <p class="text-gray-400">Select a template or generate a new design to get started</p>
+                            <div class="mt-6 flex gap-4 justify-center flex-wrap">
+                                <button class="btn-primary">🤖 Hybrid AI</button>
+                                <button class="btn-secondary">🪟 Effects</button>
+                                <button class="btn-secondary">🔌 Plugins</button>
+                                <button class="btn-secondary">🌐 Copy Site</button>
+                                <button class="btn-primary">🚀 Deploy App</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Design Variations Sidebar -->
+                <div class="w-80 border-l" style="border-color: var(--clay-gray); background: var(--graphite-mist);">
+                    <div class="p-4 border-b" style="border-color: var(--clay-gray);">
+                        <h3 class="font-semibold mb-2">Design Variations</h3>
+                        <p class="text-sm" style="color: var(--fog-gray);">10 consistent style alternatives</p>
+                    </div>
+                    
+                    <div class="p-4 space-y-3 h-full overflow-y-auto">
+                        <!-- Variation Cards -->
+                        <div class="w-full p-3 rounded-lg border" style="border-color: var(--clay-gray);">
+                            <div class="flex items-center gap-2 mb-2">
+                                <div class="w-8 h-8 rounded bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center text-white text-xs font-bold">1</div>
+                                <span class="text-sm font-medium">Modern Style</span>
+                            </div>
+                            <div class="w-full h-16 rounded border bg-gradient-to-br from-purple-50 to-pink-100 flex items-center justify-center text-xs" style="border-color: var(--clay-gray);">
+                                Preview
+                            </div>
+                        </div>
+
+                        <div class="w-full p-3 rounded-lg border" style="border-color: var(--clay-gray);">
+                            <div class="flex items-center gap-2 mb-2">
+                                <div class="w-8 h-8 rounded bg-gradient-to-br from-green-400 to-blue-500 flex items-center justify-center text-white text-xs font-bold">2</div>
+                                <span class="text-sm font-medium">Minimalist Style</span>
+                            </div>
+                            <div class="w-full h-16 rounded border bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center text-xs" style="border-color: var(--clay-gray);">
+                                Preview
+                            </div>
+                        </div>
+
+                        <div class="w-full p-3 rounded-lg border" style="border-color: var(--clay-gray);">
+                            <div class="flex items-center gap-2 mb-2">
+                                <div class="w-8 h-8 rounded bg-gradient-to-br from-red-400 to-orange-500 flex items-center justify-center text-white text-xs font-bold">3</div>
+                                <span class="text-sm font-medium">Bold Style</span>
+                            </div>
+                            <div class="w-full h-16 rounded border bg-gradient-to-br from-red-50 to-orange-100 flex items-center justify-center text-xs" style="border-color: var(--clay-gray);">
+                                Preview
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

@@ -1,27 +1,46 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { generateImageWithReplicate, generateDesignWithReplicate } from '@/lib/replicate/client';
+import Replicate from 'replicate';
+
+const replicate = new Replicate({
+  auth: process.env.REPLICATE_API_TOKEN,
+});
 
 export async function POST(request: NextRequest) {
   try {
-    const { prompt, type = 'image' } = await request.json();
+    const { prompt, style = 'modern', type = 'logo' } = await request.json();
 
-    if (!prompt) {
-      return NextResponse.json({ error: 'Prompt is required' }, { status: 400 });
+    if (!process.env.REPLICATE_API_TOKEN) {
+      return NextResponse.json({ 
+        error: 'Replicate API token not configured' 
+      }, { status: 500 });
     }
 
-    let result;
-    
-    if (type === 'image') {
-      result = await generateImageWithReplicate(prompt);
-    } else if (type === 'design') {
-      result = await generateDesignWithReplicate(prompt);
-    } else {
-      return NextResponse.json({ error: 'Invalid type. Use "image" or "design"' }, { status: 400 });
-    }
+    const output = await replicate.run(
+      "stability-ai/stable-diffusion:27b93a2413e7f36cd83da926f3656280b2931564ff050bf9575f1fdf9bcd7478",
+      {
+        input: {
+          prompt: `${prompt}, ${style} style, ${type}, professional, clean, vector art, white background, high quality`,
+          width: 512,
+          height: 512,
+          num_outputs: 1,
+          guidance_scale: 7.5,
+          num_inference_steps: 50
+        }
+      }
+    );
 
-    return NextResponse.json({ result });
+    return NextResponse.json({
+      success: true,
+      imageUrl: Array.isArray(output) ? output[0] : output,
+      prompt,
+      style,
+      type
+    });
+
   } catch (error: any) {
-    console.error('Replicate API error:', error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    console.error('Replicate generation error:', error);
+    return NextResponse.json({ 
+      error: error.message || 'Image generation failed' 
+    }, { status: 500 });
   }
 }

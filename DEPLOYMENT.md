@@ -2,68 +2,76 @@
 
 ## 🚀 Quick Deploy to Vercel
 
-### 1. Install Vercel CLI
-```bash
-npm install -g vercel
-```
+1. **Install Vercel CLI**
+   ```bash
+   npm i -g vercel
+   ```
 
-### 2. Deploy
-```bash
-vercel --prod
-```
+2. **Set Environment Variables**
+   ```bash
+   vercel env add AWS_REGION
+   vercel env add AWS_ACCESS_KEY_ID
+   vercel env add AWS_SECRET_ACCESS_KEY
+   vercel env add REPLICATE_API_TOKEN
+   vercel env add CSRF_SECRET
+   vercel env add JWT_SECRET
+   vercel env add NEXT_PUBLIC_SUPABASE_URL
+   vercel env add NEXT_PUBLIC_SUPABASE_ANON_KEY
+   ```
 
-### 3. Set Environment Variables
-In Vercel dashboard, add:
-```
-REPLICATE_API_TOKEN=r8_your_token
-GITHUB_TOKEN=ghp_your_token
-NEXT_PUBLIC_AWS_REGION=us-east-1
-NEXT_PUBLIC_COGNITO_IDENTITY_POOL_ID=us-east-1:your-pool-id
-```
+3. **Deploy**
+   ```bash
+   npm run deploy
+   ```
 
-## 🌐 Alternative Deployments
+## 🐳 Docker Deployment
 
-### Netlify
-```bash
-npm run build
-# Upload dist folder to Netlify
-```
+1. **Build Image**
+   ```bash
+   npm run docker:build
+   ```
 
-### Railway
-```bash
-railway login
-railway init
-railway up
-```
+2. **Run Container**
+   ```bash
+   docker run -p 3000:3000 \
+     -e AWS_REGION=us-east-1 \
+     -e AWS_ACCESS_KEY_ID=your_key \
+     -e AWS_SECRET_ACCESS_KEY=your_secret \
+     -e REPLICATE_API_TOKEN=your_token \
+     -e CSRF_SECRET=your_csrf_secret \
+     -e JWT_SECRET=your_jwt_secret \
+     ai-graphic-designer
+   ```
 
-### Docker
-```bash
-docker build -t ai-graphic-designer .
-docker run -p 3000:3000 ai-graphic-designer
-```
+## ☁️ AWS ECS Deployment
 
-## 📋 Pre-deployment Checklist
+1. **Push to ECR**
+   ```bash
+   aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin your-account.dkr.ecr.us-east-1.amazonaws.com
+   docker tag ai-graphic-designer:latest your-account.dkr.ecr.us-east-1.amazonaws.com/ai-graphic-designer:latest
+   docker push your-account.dkr.ecr.us-east-1.amazonaws.com/ai-graphic-designer:latest
+   ```
 
-- [ ] Environment variables configured
-- [ ] AWS Cognito Identity Pool created
-- [ ] Replicate API token added
-- [ ] GitHub token configured
-- [ ] Terraform infrastructure deployed
-- [ ] Domain configured (optional)
+2. **Create ECS Service**
+   - Use the pushed image
+   - Set environment variables
+   - Configure load balancer
+   - Enable auto-scaling
 
-## 🔧 Build Commands
+## 📊 Health Monitoring
 
-```bash
-# Development
-npm run dev
+- **Health Check**: `GET /api/health`
+- **Expected Response**: `{"status":"healthy","timestamp":"...","version":"1.0.0"}`
 
-# Production build
-npm run build
-npm start
+## 🔧 Production Checklist
 
-# Static export
-npm run build
-npm run export
-```
-
-Your AI Graphic Designer is ready to go live! 🎨
+- [ ] Set all environment variables
+- [ ] Configure SSL/HTTPS
+- [ ] Set up monitoring (Sentry, DataDog)
+- [ ] Configure CDN for static assets
+- [ ] Set up database backups
+- [ ] Configure log aggregation
+- [ ] Test all API endpoints
+- [ ] Verify security headers
+- [ ] Test mobile responsiveness
+- [ ] Set up error tracking

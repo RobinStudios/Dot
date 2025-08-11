@@ -92,6 +92,13 @@ export interface ElementStyle {
   opacity?: number;
   transform?: string;
   filter?: string;
+  // Text styles
+  fontFamily?: string;
+  fontSize?: number;
+  fontWeight?: number;
+  lineHeight?: number;
+  color?: string;
+  textAlign?: 'left' | 'center' | 'right' | 'justify';
 }
 
 export interface Animation {

@@ -2,6 +2,9 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.deactivate = exports.activate = void 0;
 const vscode = require("vscode");
+const fs = require("fs");
+const path = require("path");
+
 function activate(context) {
     const disposable = vscode.commands.registerCommand('aiDesigner.open', () => {
         const panel = vscode.window.createWebviewPanel('aiDesigner', 'AI Graphic Designer', vscode.ViewColumn.One, {
@@ -21,7 +24,11 @@ function activate(context) {
 }
 exports.activate = activate;
 function getWebviewContent() {
-    return `<!DOCTYPE html>
+    try {
+        const htmlPath = path.join(__dirname, '..', 'webview-content.html');
+        return fs.readFileSync(htmlPath, 'utf8');
+    } catch (error) {
+        return `<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -70,6 +77,7 @@ export default function AIComponent() {
     </script>
 </body>
 </html>`;
+    }
 }
 async function exportToWorkspace(code, fileName) {
     const workspaceFolders = vscode.workspace.workspaceFolders;

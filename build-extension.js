@@ -3,6 +3,7 @@
 const fs = require('fs');
 const path = require('path');
 const { execSync } = require('child_process');
+const { version } = require('./vscode-extension/package.json');
 
 console.log('🔨 Building AI Graphic Designer VSCode Extension...\n');
 
@@ -38,7 +39,7 @@ try {
     execSync('vsce package', { stdio: 'inherit' });
 
     console.log('\n✅ Extension built successfully!');
-    console.log('📁 Extension package created: ai-graphic-designer-1.0.0.vsix');
+    console.log(`📁 Extension package created: ai-graphic-designer-${version}.vsix`);
     console.log('\n🚀 To install:');
     console.log('1. Open VSCode');
     console.log('2. Go to Extensions view (Ctrl+Shift+X)');
@@ -48,5 +49,6 @@ try {
 
 } catch (error) {
     console.error('❌ Build failed:', error.message);
+    console.error('Stack trace:', error.stack);
     process.exit(1);
 }

@@ -1,11 +1,11 @@
 'use client'
 
-import { useState } from 'react'
+import React, { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useDesignStore } from '@/store/design-store'
 import { DesignMockup } from '@/types'
 import { MockupFilters } from './mockup-filters'
-import { CollaborativeVoting } from './collaborative-voting'
+import { useAIRating } from '@/hooks/useAIRating'
 import { GuidedIdeationTour } from './guided-ideation-tour'
 
 interface MockupGalleryProps {
@@ -18,12 +18,12 @@ interface MockupGalleryProps {
 }
 
 export function MockupGallery({ isOpen, onClose, mockups, clusters = [], topThree = [], originalPrompt = '' }: MockupGalleryProps) {
-  const { setCurrentMockup, deleteMockup } = useDesignStore()
+  const { setCurrentMockup, deleteMockup, addMockup } = useDesignStore()
   const [selectedMockup, setSelectedMockup] = useState<DesignMockup | null>(null)
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid')
   const [filteredMockups, setFilteredMockups] = useState(mockups)
   const [showTour, setShowTour] = useState(false)
-  const [showVoting, setShowVoting] = useState(false)
+  // const [showVoting, setShowVoting] = useState(false)
 
   const handleMockupSelect = (mockup: DesignMockup) => {
     setCurrentMockup(mockup)
@@ -36,9 +36,22 @@ export function MockupGallery({ isOpen, onClose, mockups, clusters = [], topThre
   }
 
   const handleMockupDuplicate = (mockup: DesignMockup, e: React.MouseEvent) => {
-    e.stopPropagation()
-    // TODO: Implement duplicate functionality
-    console.log('Duplicate mockup:', mockup.id)
+    e.stopPropagation();
+    // Duplicate the mockup with a new id and timestamps
+    const newId = `mockup-${Date.now()}`;
+    const duplicated: DesignMockup = {
+      ...mockup,
+      id: newId,
+      title: `${mockup.title} (Copy)`,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      elements: mockup.elements.map(el => ({
+        ...el,
+        id: `${el.id}-copy-${Date.now()}`,
+        children: el.children ? el.children.map(child => ({ ...child, id: `${child.id}-copy-${Date.now()}` })) : undefined,
+      })),
+    };
+    addMockup(duplicated);
   }
 
   return (
@@ -76,12 +89,14 @@ export function MockupGallery({ isOpen, onClose, mockups, clusters = [], topThre
                   >
                     🎯 Tour
                   </button>
+                  {/*
                   <button
                     onClick={() => setShowVoting(!showVoting)}
                     className="px-3 py-1 bg-green-500 text-white rounded-md text-sm hover:bg-green-600"
                   >
                     🗳️ Vote
                   </button>
+                  */}
                   <button
                     onClick={() => setViewMode(viewMode === 'grid' ? 'list' : 'grid')}
                     className="p-2 text-secondary-500 hover:text-secondary-700 dark:hover:text-secondary-300"
@@ -107,31 +122,11 @@ export function MockupGallery({ isOpen, onClose, mockups, clusters = [], topThre
               />
             </div>
 
-            {/* Top Three Highlight */}
-            {topThree.length > 0 && (
-              <div className="px-6 py-4 bg-yellow-50 dark:bg-yellow-900/20 border-b border-secondary-200 dark:border-secondary-700">
-                <h3 className="text-sm font-medium text-yellow-800 dark:text-yellow-200 mb-2">🏆 Top 3 Designs</h3>
-                <div className="flex space-x-2 text-xs">
-                  {topThree.map((design, index) => (
-                    <span key={design.id} className="px-2 py-1 bg-yellow-200 dark:bg-yellow-800 rounded">
-                      #{index + 1} Score: {design.overallScore?.toFixed(1) || 'N/A'}
-                    </span>
-                  ))}
-                </div>
-              </div>
-            )}
+            {/* AI Rating Highlight (to be implemented) */}
+            {/* TODO: Show top-rated designs by AI here */}
 
-            {/* Voting Section */}
-            {showVoting && (
-              <div className="px-6 py-4 border-b border-secondary-200 dark:border-secondary-700">
-                <CollaborativeVoting 
-                  mockups={filteredMockups}
-                  teamId="demo-team"
-                  userId="demo-user"
-                  userName="Demo User"
-                />
-              </div>
-            )}
+            {/* AI Rating Section (to be implemented) */}
+            {/* TODO: Add AI-based design rating here */}
 
             {/* Content */}
             <div className="flex-1 overflow-y-auto p-6">
@@ -150,77 +145,92 @@ export function MockupGallery({ isOpen, onClose, mockups, clusters = [], topThre
               ) : (
                 <div className={viewMode === 'grid' ? 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6' : 'space-y-4'}>
                   <AnimatePresence>
-                    {filteredMockups.map((mockup) => (
-                      <motion.div
-                        key={mockup.id}
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: -20 }}
-                        className={`bg-white dark:bg-secondary-700 rounded-lg shadow-soft border border-secondary-200 dark:border-secondary-600 overflow-hidden cursor-pointer hover:shadow-medium transition-shadow ${
-                          viewMode === 'list' ? 'flex items-center space-x-4' : ''
-                        }`}
-                        onClick={() => handleMockupSelect(mockup)}
-                      >
-                        {/* Thumbnail */}
-                        <div className={`relative ${viewMode === 'list' ? 'w-24 h-24 flex-shrink-0' : 'h-48'}`}>
-                          <div className="w-full h-full bg-gradient-to-br from-primary-100 to-accent-100 dark:from-primary-900/20 dark:to-accent-900/20 flex items-center justify-center">
-                            <span className="text-4xl">🎨</span>
-                          </div>
-                          <div className="absolute top-2 right-2 flex space-x-1">
-                            <button
-                              onClick={(e) => handleMockupDuplicate(mockup, e)}
-                              className="w-6 h-6 bg-white dark:bg-secondary-600 rounded-full flex items-center justify-center text-xs shadow-sm hover:bg-secondary-50 dark:hover:bg-secondary-500"
+                    <>
+                      {filteredMockups.map((mockup) => {
+                        const { rating, critique, suggestions, loading, error, fetchRating } = useAIRating(mockup);
+                        React.useEffect(() => { fetchRating(); }, []);
+                        return (
+                          <motion.div
+                            key={mockup.id}
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, y: -20 }}
+                          >
+                            <div
+                              className={`bg-white dark:bg-secondary-700 rounded-lg shadow-soft border border-secondary-200 dark:border-secondary-600 overflow-hidden cursor-pointer hover:shadow-medium transition-shadow ${viewMode === 'list' ? 'flex items-center space-x-4' : ''}`}
+                              onClick={() => handleMockupSelect(mockup)}
                             >
-                              📋
-                            </button>
-                            <button
-                              onClick={(e) => handleMockupDelete(mockup.id, e)}
-                              className="w-6 h-6 bg-red-100 dark:bg-red-900/30 rounded-full flex items-center justify-center text-xs text-red-500 shadow-sm hover:bg-red-200 dark:hover:bg-red-900/50"
-                            >
-                              🗑️
-                            </button>
-                          </div>
-                        </div>
+                              {/* Thumbnail */}
+                              <div className={`relative ${viewMode === 'list' ? 'w-24 h-24 flex-shrink-0' : 'h-48'}`}>
+                                <div className="w-full h-full bg-gradient-to-br from-primary-100 to-accent-100 dark:from-primary-900/20 dark:to-accent-900/20 flex items-center justify-center">
+                                  <span className="text-4xl">🎨</span>
+                                </div>
+                                <div className="absolute top-2 right-2 flex space-x-1">
+                                  <button
+                                    onClick={(e) => handleMockupDuplicate(mockup, e)}
+                                    className="w-6 h-6 bg-white dark:bg-secondary-600 rounded-full flex items-center justify-center text-xs shadow-sm hover:bg-secondary-50 dark:hover:bg-secondary-500"
+                                  >
+                                    📋
+                                  </button>
+                                  <button
+                                    onClick={(e) => handleMockupDelete(mockup.id, e)}
+                                    className="w-6 h-6 bg-red-100 dark:bg-red-900/30 rounded-full flex items-center justify-center text-xs text-red-500 shadow-sm hover:bg-red-200 dark:hover:bg-red-900/50"
+                                  >
+                                    🗑️
+                                  </button>
+                                </div>
+                              </div>
 
-                        {/* Content */}
-                        <div className={`p-4 ${viewMode === 'list' ? 'flex-1' : ''}`}>
-                          <h3 className="font-semibold text-secondary-900 dark:text-white mb-1 truncate">
-                            {mockup.title}
-                          </h3>
-                          <p className="text-sm text-secondary-500 dark:text-secondary-400 mb-2 line-clamp-2">
-                            {mockup.description}
-                          </p>
-                          <div className="flex items-center justify-between text-xs text-secondary-400 dark:text-secondary-500 mb-2">
-                            <span>{mockup.elements?.length || 0} elements</span>
-                            <span>{mockup.cluster && `${mockup.cluster} style`}</span>
-                          </div>
-                          {mockup.overallScore && (
-                            <div className="flex space-x-2 text-xs">
-                              <span className="px-2 py-1 bg-blue-100 text-blue-700 rounded">Style: {mockup.styleScore}</span>
-                              <span className="px-2 py-1 bg-green-100 text-green-700 rounded">A11y: {mockup.accessibilityScore}</span>
+                              {/* Content */}
+                              <div className={`p-4 ${viewMode === 'list' ? 'flex-1' : ''}`}>
+                                <h3 className="font-semibold text-secondary-900 dark:text-white mb-1 truncate">
+                                  {mockup.title}
+                                </h3>
+                                <p className="text-sm text-secondary-500 dark:text-secondary-400 mb-2 line-clamp-2">
+                                  {mockup.description}
+                                </p>
+                                <div className="flex items-center justify-between text-xs text-secondary-400 dark:text-secondary-500 mb-2">
+                                  <span>{mockup.elements?.length || 0} elements</span>
+                                </div>
+                                {/* AI Rating Display */}
+                                <div className="mt-2">
+                                  {loading ? (
+                                    <span className="text-xs text-blue-500">AI rating...</span>
+                                  ) : error ? (
+                                    <span className="text-xs text-red-500">AI rating error</span>
+                                  ) : rating !== null ? (
+                                    <div>
+                                      <span className="text-sm font-bold text-green-600">AI Score: {rating}/10</span>
+                                      {critique && <div className="text-xs mt-1 text-secondary-600">{critique}</div>}
+                                      {suggestions.length > 0 && (
+                                        <ul className="text-xs mt-1 text-secondary-500 list-disc list-inside">
+                                          {suggestions.map((s, i) => <li key={i}>{s}</li>)}
+                                        </ul>
+                                      )}
+                                    </div>
+                                  ) : null}
+                                </div>
+                              </div>
                             </div>
-                          )}
-                        </div>
-                      </motion.div>
-                    ))}
+                          </motion.div>
+                        );
+                      })}
+                    </>
                   </AnimatePresence>
                 </div>
               )}
             </div>
 
-            {/* Footer */}
-            <div className="p-6 border-t border-secondary-200 dark:border-secondary-700 bg-secondary-50 dark:bg-secondary-700/50">
-              <div className="flex items-center justify-between">
-                <div className="text-sm text-secondary-500 dark:text-secondary-400">
-                  Click on a design to open it in the editor
-                </div>
-                <button
-                  onClick={onClose}
-                  className="px-4 py-2 bg-secondary-200 dark:bg-secondary-600 text-secondary-700 dark:text-secondary-300 rounded-lg hover:bg-secondary-300 dark:hover:bg-secondary-500 transition-colors"
-                >
-                  Close
-                </button>
+            <div className="flex items-center justify-between">
+              <div className="text-sm text-secondary-500 dark:text-secondary-400">
+                Click on a design to open it in the editor
               </div>
+              <button
+                onClick={onClose}
+                className="px-4 py-2 bg-secondary-200 dark:bg-secondary-600 text-secondary-700 dark:text-secondary-300 rounded-lg hover:bg-secondary-300 dark:hover:bg-secondary-500 transition-colors"
+              >
+                Close
+              </button>
             </div>
 
             {/* Guided Tour */}

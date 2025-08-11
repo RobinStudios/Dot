@@ -1,0 +1,15 @@
+{
+  "functions": {
+    "src/app/api/**/*.ts": {
+      "maxDuration": 30
+    }
+  },
+  "env": {
+    "AWS_REGION": "@aws_region",
+    "AWS_ACCESS_KEY_ID": "@aws_access_key_id",
+    "AWS_SECRET_ACCESS_KEY": "@aws_secret_access_key",
+    "REPLICATE_API_TOKEN": "@replicate_api_token",
+    "CSRF_SECRET": "@csrf_secret",
+    "JWT_SECRET": "@jwt_secret"
+  }
+}

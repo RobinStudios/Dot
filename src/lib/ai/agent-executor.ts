@@ -24,20 +24,35 @@ export class AgentExecutor {
 
   async executeTask(task: AgentTask): Promise<AgentResult> {
     try {
-      switch (task.type) {
+      // Validate task type
+      const allowedTypes = ['design', 'code', 'brand', 'export'];
+      if (!allowedTypes.includes(task.type)) {
+        return { success: false, error: 'Invalid task type' };
+      }
+
+      // Sanitize prompt
+      const sanitizedPrompt = task.prompt
+        .replace(/[<>"'&]/g, '')
+        .replace(/\b(exec|eval|system|shell)\b/gi, '')
+        .substring(0, 1000);
+      
+      const sanitizedTask = { ...task, prompt: sanitizedPrompt };
+
+      switch (sanitizedTask.type) {
         case 'design':
-          return await this.executeDesignTask(task);
+          return await this.executeDesignTask(sanitizedTask);
         case 'code':
-          return await this.executeCodeTask(task);
+          return await this.executeCodeTask(sanitizedTask);
         case 'brand':
-          return await this.executeBrandTask(task);
+          return await this.executeBrandTask(sanitizedTask);
         case 'export':
-          return await this.executeExportTask(task);
+          return await this.executeExportTask(sanitizedTask);
         default:
           return { success: false, error: 'Unknown task type' };
       }
     } catch (error: any) {
-      return { success: false, error: error.message };
+      console.error('Task execution failed');
+      return { success: false, error: 'Task execution failed' };
     }
   }
 

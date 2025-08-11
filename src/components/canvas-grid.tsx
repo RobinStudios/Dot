@@ -1,39 +1,42 @@
 'use client'
 
-import { Layout } from '@/types'
-
-interface CanvasGridProps {
-  layout: Layout
-}
-
-export function CanvasGrid({ layout }: CanvasGridProps) {
-  const { columns, rows, gap, padding } = layout
-
-  const gridStyle = {
-    display: 'grid',
-    gridTemplateColumns: `repeat(${columns}, 1fr)`,
-    gridTemplateRows: `repeat(${rows}, 1fr)`,
-    gap: `${gap}px`,
-    padding: `${padding}px`,
-    width: '100%',
-    height: '100%',
-  }
-
-  const gridCells = []
-  for (let i = 0; i < columns * rows; i++) {
-    gridCells.push(
-      <div
-        key={i}
-        className="border border-secondary-200 dark:border-secondary-700 bg-transparent"
+export function CanvasGrid({ layout, gridSize = 20 }: { layout: any, gridSize?: number }) {
+  const cols = layout.columns
+  const rows = layout.rows
+  const width = cols * 100
+  const height = rows * 100
+  const vLines = []
+  for (let x = 0; x <= width; x += gridSize) {
+    vLines.push(
+      <line
+        key={`v-${x}`}
+        x1={x}
+        y1={0}
+        x2={x}
+        y2={height}
+        stroke="#e5e7eb"
+        strokeWidth={x % 100 === 0 ? 2 : 1}
       />
     )
   }
-
+  const hLines = []
+  for (let y = 0; y <= height; y += gridSize) {
+    hLines.push(
+      <line
+        key={`h-${y}`}
+        x1={0}
+        y1={y}
+        x2={width}
+        y2={y}
+        stroke="#e5e7eb"
+        strokeWidth={y % 100 === 0 ? 2 : 1}
+      />
+    )
+  }
   return (
-    <div className="absolute inset-0 pointer-events-none">
-      <div style={gridStyle}>
-        {gridCells}
-      </div>
-    </div>
+    <svg className="absolute inset-0 w-full h-full z-0" style={{ pointerEvents: 'none' }}>
+      {vLines}
+      {hLines}
+    </svg>
   )
 }

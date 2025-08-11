@@ -5,7 +5,7 @@ import { motion } from 'framer-motion'
 import { useDesignStore } from '@/store/design-store'
 
 export function Toolbar() {
-  const { currentMockup, selectedElements, deleteElement, clearSelection } = useDesignStore()
+  const { currentMockup, selectedElements, deleteElement, clearSelection, addElement, updateElement } = useDesignStore()
   const [activeTool, setActiveTool] = useState<string | null>(null)
 
   const tools = [
@@ -31,19 +31,69 @@ export function Toolbar() {
     }
   }
 
+
   const handleDuplicate = () => {
-    // TODO: Implement duplicate functionality
-    console.log('Duplicate selected elements')
+    if (!currentMockup || selectedElements.length === 0) return;
+    // Find selected elements
+    const elementsToDuplicate = currentMockup.elements.filter(el => selectedElements.includes(el.id));
+    elementsToDuplicate.forEach((el) => {
+      const newId = `${el.id}-copy-${Date.now()}`;
+      const duplicated = {
+        ...el,
+        id: newId,
+        position: {
+          ...el.position,
+          x: el.position.x + 40,
+          y: el.position.y + 40,
+        },
+        children: el.children ? el.children.map(child => ({ ...child, id: `${child.id}-copy-${Date.now()}` })) : undefined,
+      };
+      addElement(duplicated);
+    });
+    clearSelection();
   }
+
 
   const handleGroup = () => {
-    // TODO: Implement group functionality
-    console.log('Group selected elements')
+    if (!currentMockup || selectedElements.length < 2) return;
+    // Find and remove selected elements
+    const elementsToGroup = currentMockup.elements.filter(el => selectedElements.includes(el.id));
+    const remainingElements = currentMockup.elements.filter(el => !selectedElements.includes(el.id));
+    // Create a new container element
+    const groupId = `group-${Date.now()}`;
+    const groupElement = {
+      id: groupId,
+      type: 'container',
+      position: { x: elementsToGroup[0].position.x, y: elementsToGroup[0].position.y },
+      size: { width: 400, height: 300 },
+      style: {},
+      children: elementsToGroup,
+    };
+    // Remove grouped elements and add the group
+    if (currentMockup) {
+      currentMockup.elements = [...remainingElements, groupElement];
+      updateElement(groupId, {}); // trigger update
+    }
+    clearSelection();
   }
 
+
   const handleUngroup = () => {
-    // TODO: Implement ungroup functionality
-    console.log('Ungroup selected elements')
+    if (!currentMockup || selectedElements.length === 0) return;
+    // Find selected container elements
+    const containers = currentMockup.elements.filter(el => selectedElements.includes(el.id) && el.type === 'container' && el.children && el.children.length > 0);
+    let newElements = [...currentMockup.elements];
+    containers.forEach(container => {
+      // Remove the container
+      newElements = newElements.filter(el => el.id !== container.id);
+      // Add its children to the root
+      newElements = [...newElements, ...container.children!];
+    });
+    if (currentMockup) {
+      currentMockup.elements = newElements;
+      updateElement(newElements[0].id, {}); // trigger update
+    }
+    clearSelection();
   }
 
   return (

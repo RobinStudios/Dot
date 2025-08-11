@@ -1,20 +1,58 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { z } from 'zod';
+import { sanitizeInput } from '@/lib/security/csrf';
+import { authService } from '@/lib/auth/auth';
+
+const SignupSchema = z.object({
+  email: z.string().email().max(255),
+  password: z.string().min(8).max(128),
+  name: z.string().min(1).max(100),
+});
 
 export async function POST(request: NextRequest) {
   try {
-    const { name, email, password } = await request.json();
+    // CSRF Protection
+    const origin = request.headers.get('origin');
+    const allowedOrigins = [process.env.NEXT_PUBLIC_APP_URL, 'http://localhost:3000'];
+    
+    if (!origin || !allowedOrigins.includes(origin)) {
+      return NextResponse.json({ error: 'Invalid origin' }, { status: 403 });
+    }
 
-    const user = {
-      id: Date.now().toString(),
-      name,
-      email,
-      plan: 'free'
-    };
-
-    const token = Buffer.from(`${user.id}:${email}`).toString('base64');
-
-    return NextResponse.json({ token, user });
+    const body = await request.json();
+    const validatedData = SignupSchema.parse(body);
+    
+    // Sanitize inputs
+    const sanitizedEmail = sanitizeInput(validatedData.email.toLowerCase());
+    const sanitizedName = sanitizeInput(validatedData.name);
+    
+    // Create user in database
+    const user = await authService.createUser(
+      sanitizedEmail,
+      validatedData.password,
+      sanitizedName
+    );
+    
+    // Create session
+    const token = await authService.createSession(user);
+    
+    return NextResponse.json({ 
+      user, 
+      token 
+    });
+    
   } catch (error) {
-    return NextResponse.json({ error: 'Signup failed' }, { status: 400 });
+    if (error instanceof z.ZodError) {
+      return NextResponse.json(
+        { error: 'Invalid input data' },
+        { status: 400 }
+      );
+    }
+    
+    console.error('Signup error:', error);
+    return NextResponse.json(
+      { error: 'Signup failed' },
+      { status: 500 }
+    );
   }
 }
