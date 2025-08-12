@@ -1,6 +1,16 @@
 import * as vscode from 'vscode';
 
+let syncStatusBarItem: vscode.StatusBarItem | undefined;
+
 export function activate(context: vscode.ExtensionContext) {
+    // Status bar item for sync state
+    syncStatusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, 100);
+    syncStatusBarItem.text = '$(cloud-upload) AI Designer: Synced';
+    syncStatusBarItem.tooltip = 'All changes are synced with GitHub';
+    syncStatusBarItem.show();
+    context.subscriptions.push(syncStatusBarItem);
+
+    // Open Designer Command
     const disposable = vscode.commands.registerCommand('aiDesigner.open', () => {
         const panel = vscode.window.createWebviewPanel(
             'aiDesigner',
@@ -29,8 +39,112 @@ export function activate(context: vscode.ExtensionContext) {
             context.subscriptions
         );
     });
-
     context.subscriptions.push(disposable);
+
+    // Git Commit Command
+    const commitDisposable = vscode.commands.registerCommand('aiDesigner.gitCommit', async () => {
+        if (syncStatusBarItem) {
+            syncStatusBarItem.text = '$(sync~spin) AI Designer: Committing...';
+            syncStatusBarItem.tooltip = 'Committing changes...';
+        }
+        const gitExtension = vscode.extensions.getExtension('vscode.git')?.exports;
+        const api = gitExtension?.getAPI(1);
+        if (!api) {
+            vscode.window.showErrorMessage('VSCode Git extension not found.');
+            return;
+        }
+        const repo = api.repositories[0];
+        if (!repo) {
+            vscode.window.showErrorMessage('No Git repository found in workspace.');
+            return;
+        }
+        const message = await vscode.window.showInputBox({ prompt: 'Commit message', placeHolder: 'Describe your design changes...' });
+        if (!message) return;
+        try {
+            await repo.add([]); // Stage all changes
+            await repo.commit(message);
+            vscode.window.showInformationMessage('Design changes committed.');
+            if (syncStatusBarItem) {
+                syncStatusBarItem.text = '$(cloud-upload) AI Designer: Committed';
+                syncStatusBarItem.tooltip = 'Changes committed locally. Push to sync with GitHub.';
+            }
+        } catch (err) {
+            vscode.window.showErrorMessage('Commit failed: ' + err);
+            if (syncStatusBarItem) {
+                syncStatusBarItem.text = '$(error) AI Designer: Commit Failed';
+                syncStatusBarItem.tooltip = 'Commit failed. See output for details.';
+            }
+        }
+    });
+    context.subscriptions.push(commitDisposable);
+
+    // Git Push Command
+    const pushDisposable = vscode.commands.registerCommand('aiDesigner.gitPush', async () => {
+        if (syncStatusBarItem) {
+            syncStatusBarItem.text = '$(sync~spin) AI Designer: Pushing...';
+            syncStatusBarItem.tooltip = 'Pushing changes to GitHub...';
+        }
+        const gitExtension = vscode.extensions.getExtension('vscode.git')?.exports;
+        const api = gitExtension?.getAPI(1);
+        if (!api) {
+            vscode.window.showErrorMessage('VSCode Git extension not found.');
+            return;
+        }
+        const repo = api.repositories[0];
+        if (!repo) {
+            vscode.window.showErrorMessage('No Git repository found in workspace.');
+            return;
+        }
+        try {
+            await repo.push();
+            vscode.window.showInformationMessage('Changes pushed to remote repository.');
+            if (syncStatusBarItem) {
+                syncStatusBarItem.text = '$(cloud-upload) AI Designer: Synced';
+                syncStatusBarItem.tooltip = 'All changes are synced with GitHub.';
+            }
+        } catch (err) {
+            vscode.window.showErrorMessage('Push failed: ' + err);
+            if (syncStatusBarItem) {
+                syncStatusBarItem.text = '$(error) AI Designer: Push Failed';
+                syncStatusBarItem.tooltip = 'Push failed. See output for details.';
+            }
+        }
+    });
+    context.subscriptions.push(pushDisposable);
+
+    // Git Pull Command
+    const pullDisposable = vscode.commands.registerCommand('aiDesigner.gitPull', async () => {
+        if (syncStatusBarItem) {
+            syncStatusBarItem.text = '$(sync~spin) AI Designer: Pulling...';
+            syncStatusBarItem.tooltip = 'Pulling latest changes from GitHub...';
+        }
+        const gitExtension = vscode.extensions.getExtension('vscode.git')?.exports;
+        const api = gitExtension?.getAPI(1);
+        if (!api) {
+            vscode.window.showErrorMessage('VSCode Git extension not found.');
+            return;
+        }
+        const repo = api.repositories[0];
+        if (!repo) {
+            vscode.window.showErrorMessage('No Git repository found in workspace.');
+            return;
+        }
+        try {
+            await repo.pull();
+            vscode.window.showInformationMessage('Pulled latest changes from remote.');
+            if (syncStatusBarItem) {
+                syncStatusBarItem.text = '$(cloud-upload) AI Designer: Synced';
+                syncStatusBarItem.tooltip = 'All changes are synced with GitHub.';
+            }
+        } catch (err) {
+            vscode.window.showErrorMessage('Pull failed: ' + err);
+            if (syncStatusBarItem) {
+                syncStatusBarItem.text = '$(error) AI Designer: Pull Failed';
+                syncStatusBarItem.tooltip = 'Pull failed. See output for details.';
+            }
+        }
+    });
+    context.subscriptions.push(pullDisposable);
 }
 
 function getWebviewContent(extensionUri: vscode.Uri): string {

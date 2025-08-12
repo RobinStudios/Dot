@@ -62,16 +62,17 @@ export function ToastContainer() {
       {toastList.map((toast) => (
         <div
           key={toast.id}
-          className={`flex items-center gap-3 p-4 rounded-lg border backdrop-blur-sm text-white min-w-80 ${
+          className={`flex items-center gap-3 p-4 rounded-lg border shadow-lg backdrop-blur-sm text-white min-w-80 transition-all duration-200 ${
             toast.type === 'success' ? 'bg-green-900/90 border-green-700' :
             toast.type === 'error' ? 'bg-red-900/90 border-red-700' :
             toast.type === 'warning' ? 'bg-yellow-900/90 border-yellow-700' :
             'bg-blue-900/90 border-blue-700'
           }`}
+          style={{ boxShadow: toast.type === 'success' ? '0 0 0 2px #22c55e44' : toast.type === 'error' ? '0 0 0 2px #ef444444' : undefined }}
         >
           {getIcon(toast.type)}
           <div className="flex-1">
-            <p className="text-sm">{toast.message}</p>
+            <p className="text-sm font-medium tracking-wide">{toast.message}</p>
             {toast.action && (
               <button
                 onClick={toast.action.onClick}
@@ -84,6 +85,7 @@ export function ToastContainer() {
           <button
             onClick={() => removeToast(toast.id)}
             className="text-white/70 hover:text-white"
+            aria-label="Close notification"
           >
             <X className="w-4 h-4" />
           </button>

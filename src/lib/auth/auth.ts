@@ -24,7 +24,77 @@ if (users.size === 0) {
   });
 }
 
+// In-memory password reset token storage
+const passwordResetTokens: Map<string, { userId: string; expiresAt: number }> = new Map();
+// In-memory email verification token storage
+const emailVerificationTokens: Map<string, { userId: string; expiresAt: number }> = new Map();
+
+function generateRandomToken(length = 48) {
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+  let result = '';
+  for (let i = 0; i < length; i++) {
+    result += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  return result;
+}
+
 export class AuthService {
+
+  /**
+   * Generate an email verification token for a user (expires in 24 hours)
+   */
+  async generateEmailVerificationToken(email: string): Promise<string | null> {
+    const user = Array.from(users.values()).find(u => u.email === email);
+    if (!user) return null;
+    const token = generateRandomToken(48);
+    const expiresAt = Date.now() + 1000 * 60 * 60 * 24; // 24 hours
+    emailVerificationTokens.set(token, { userId: user.id, expiresAt });
+    return token;
+  }
+
+  /**
+   * Verify a user's email using a valid token
+   */
+  async verifyEmail(token: string): Promise<boolean> {
+    const entry = emailVerificationTokens.get(token);
+    if (!entry || entry.expiresAt < Date.now()) {
+      emailVerificationTokens.delete(token);
+      return false;
+    }
+    const user = users.get(entry.userId);
+    if (!user) return false;
+    // Mark user as verified (add a property if needed)
+    (user as any).emailVerified = true;
+    emailVerificationTokens.delete(token);
+    return true;
+  }
+  /**
+   * Generate a password reset token for a user (expires in 1 hour)
+   */
+  async generatePasswordResetToken(email: string): Promise<string | null> {
+    const user = Array.from(users.values()).find(u => u.email === email);
+    if (!user) return null;
+    const token = generateRandomToken(48);
+    const expiresAt = Date.now() + 1000 * 60 * 60; // 1 hour
+    passwordResetTokens.set(token, { userId: user.id, expiresAt });
+    return token;
+  }
+
+  /**
+   * Reset a user's password using a valid token
+   */
+  async resetPassword(token: string, newPassword: string): Promise<boolean> {
+    const entry = passwordResetTokens.get(token);
+    if (!entry || entry.expiresAt < Date.now()) {
+      passwordResetTokens.delete(token);
+      return false;
+    }
+    const user = users.get(entry.userId);
+    if (!user) return false;
+    user.passwordHash = await bcrypt.hash(newPassword, 10);
+    passwordResetTokens.delete(token);
+    return true;
+  }
   async createUser(email: string, password: string, name: string): Promise<User> {
     const existingUser = Array.from(users.values()).find(u => u.email === email);
     if (existingUser) {

@@ -111,7 +111,7 @@ export function FigmaDesignEditor({
         className="relative w-full h-full"
         style={{ background: 'var(--cloud-white)' }}
         onClick={() => onElementSelect('')}
-        onMouseMove={handleMouseMove}
+        onMouseMove={(e) => handleMouseMove(e.nativeEvent)}
         onMouseUp={handleMouseUp}
       >
         {/* Grid */}

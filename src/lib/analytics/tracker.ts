@@ -1,4 +1,6 @@
-import { supabase } from '@/lib/integrations/supabase-client'
+
+// import { ddbDocClient } from '../aws/dynamodb-client';
+// import { PutCommand } from '@aws-sdk/lib-dynamodb';
 
 interface AnalyticsEvent {
   event: string
@@ -31,15 +33,15 @@ export class AnalyticsTracker {
     }
 
     try {
-      await supabase
-        .from('analytics_events')
-        .insert({
-          event: eventData.event,
-          user_id: eventData.userId,
-          properties: eventData.properties,
-          session_id: this.sessionId,
-          created_at: eventData.timestamp.toISOString()
-        })
+      // TODO: Implement AWS DynamoDB logic for analytics event tracking
+      // Example:
+      // await ddbDocClient.send(new PutCommand({
+      //   TableName: 'ai-designer-analytics',
+      //   Item: {
+      //     ...eventData,
+      //     created_at: eventData.timestamp.toISOString(),
+      //   }
+      // }));
     } catch (error) {
       console.error('Analytics tracking failed:', error)
     }

@@ -1,4 +1,7 @@
-import { db } from '../db/client';
+
+import { ddbDocClient } from '../aws/dynamodb-client';
+import { PutCommand, QueryCommand } from '@aws-sdk/lib-dynamodb';
+import crypto from 'crypto';
 
 export interface Template {
   id: string;
@@ -13,42 +16,44 @@ export interface Template {
   updated_at: string;
 }
 
+
+const TEMPLATES_TABLE = process.env.AWS_TEMPLATES_TABLE || 'ai-designer-templates';
+
 export class TemplateService {
   async getPublicTemplates(): Promise<Template[]> {
-    const { data, error } = await db
-      .from('templates')
-      .select('*')
-      .eq('is_public', true)
-      .order('created_at', { ascending: false });
-
-    if (error) {
-      console.error('Database error:', error);
-      return this.getFallbackTemplates();
-    }
-    
-    return data || this.getFallbackTemplates();
+    const params = {
+      TableName: TEMPLATES_TABLE,
+      IndexName: 'is_public-index',
+      KeyConditionExpression: 'is_public = :pub',
+      ExpressionAttributeValues: { ':pub': true },
+      ScanIndexForward: false,
+    };
+    const result = await ddbDocClient.send(new QueryCommand(params));
+    return (result.Items as Template[]) || this.getFallbackTemplates();
   }
 
   async getUserTemplates(userId: string): Promise<Template[]> {
-    const { data, error } = await db
-      .from('templates')
-      .select('*')
-      .eq('created_by', userId)
-      .order('updated_at', { ascending: false });
-
-    if (error) throw new Error(error.message);
-    return data || [];
+    const params = {
+      TableName: TEMPLATES_TABLE,
+      IndexName: 'created_by-index',
+      KeyConditionExpression: 'created_by = :uid',
+      ExpressionAttributeValues: { ':uid': userId },
+      ScanIndexForward: false,
+    };
+    const result = await ddbDocClient.send(new QueryCommand(params));
+    return (result.Items as Template[]) || [];
   }
 
   async createTemplate(template: Omit<Template, 'id' | 'created_at' | 'updated_at'>): Promise<Template> {
-    const { data, error } = await db
-      .from('templates')
-      .insert(template)
-      .select()
-      .single();
-
-    if (error) throw new Error(error.message);
-    return data;
+    const now = new Date().toISOString();
+    const newTemplate = {
+      ...template,
+      id: crypto.randomUUID(),
+      created_at: now,
+      updated_at: now,
+    };
+    await ddbDocClient.send(new PutCommand({ TableName: TEMPLATES_TABLE, Item: newTemplate }));
+    return newTemplate;
   }
 
   private getFallbackTemplates(): Template[] {

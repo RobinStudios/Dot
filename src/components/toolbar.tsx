@@ -61,7 +61,7 @@ export function Toolbar() {
     const remainingElements = currentMockup.elements.filter(el => !selectedElements.includes(el.id));
     // Create a new container element
     const groupId = `group-${Date.now()}`;
-    const groupElement = {
+    const groupElement: import("@/types/index").DesignElement = {
       id: groupId,
       type: 'container',
       position: { x: elementsToGroup[0].position.x, y: elementsToGroup[0].position.y },

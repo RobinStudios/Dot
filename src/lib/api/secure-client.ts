@@ -13,11 +13,11 @@ export class SecureAPIClient {
   }
 
   private async makeRequest(endpoint: string, options: RequestInit = {}) {
-    const headers: HeadersInit = {
-      'Content-Type': 'application/json',
-      ...options.headers,
-    };
 
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+      ...(options.headers ? Object.fromEntries(Object.entries(options.headers as any)) : {}),
+    };
     if (this.token) {
       headers['Authorization'] = `Bearer ${this.token}`;
     }

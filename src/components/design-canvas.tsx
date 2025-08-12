@@ -10,6 +10,7 @@ import { ElementRenderer } from './element-renderer'
 import { CanvasGrid } from './canvas-grid'
 import { DesignHistoryPanel } from './design-history-panel'
 
+export function DesignCanvas() {
   const [showHistory, setShowHistory] = useState(false)
   const canvasRef = useRef<HTMLDivElement>(null)
   const { currentMockup, selectedElements, selectElement, deselectElement, clearSelection, updateElement } = useDesignStore()
@@ -213,7 +214,7 @@ import { DesignHistoryPanel } from './design-history-panel'
               <ElementRenderer
                 element={element}
                 isSelected={selectedElements.includes(element.id)}
-                onClick={(e) => handleElementClick(e, element.id)}
+                onClick={(e) => handleElementClick(e as React.MouseEvent<HTMLDivElement, MouseEvent>, element.id)}
               />
             </div>
           ))}

@@ -12,7 +12,7 @@ export interface AIAgent {
 }
 
 export interface AgentTask {
-  type: 'design_generation' | 'asset_creation' | 'code_export' | 'copywriting' | 'branding' | 'ui_optimization';
+  type: 'design_generation' | 'asset_creation' | 'code_export' | 'copywriting' | 'branding' | 'ui_optimization' | 'bulk_export';
   input: any;
   context?: any;
 }

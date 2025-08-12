@@ -14,6 +14,7 @@ import { CreativeEffectsPanel } from '@/components/creative-effects-panel'
 import { MCPPluginPanel } from '@/components/mcp-plugin-panel'
 import { WebsiteCopier } from '@/components/website-copier'
 import { BoltDisplayArea } from '@/components/bolt-display-area'
+import { Sidebar } from '@/components/sidebar'
 import { MobileLayout } from '@/components/mobile-layout'
 import { MobileCollaborationProvider } from '@/components/mobile-collaboration-provider'
 import { CollaborativeVoting } from '@/components/collaborative-voting'
@@ -53,7 +54,9 @@ function HomeContent() {
     brandName: 'My Brand',
     industry: 'Technology',
     targetAudience: 'Professionals'
-  })
+  });
+  // Git sync status: 'idle' | 'syncing' | 'success' | 'error'
+  const [syncStatus, setSyncStatus] = useState('idle');
   const [generatedImage, setGeneratedImage] = useState<string | null>(null)
   const { user } = useAuth()
 
@@ -89,6 +92,48 @@ function HomeContent() {
       setIsGenerating(false)
     }
   }
+
+  // Handler to pass to BoltDisplayArea for GitHub push
+  const handleGitPush = async (selectedTemplate: MockupTemplate | null) => {
+    if (!selectedTemplate) return;
+    setSyncStatus('syncing');
+    try {
+      const repo = localStorage.getItem('github_repo') || 'owner/repo';
+      const fileName = `${selectedTemplate.name.replace(/\s+/g, '_')}.json`;
+      const commitMessage = `Update ${fileName} via AI Designer`;
+      const githubToken = localStorage.getItem('github_token');
+      if (!githubToken) {
+        toast.error('GitHub authentication required. Please log in.');
+        setSyncStatus('error');
+        return;
+      }
+      const response = await fetch('/api/github/push', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${githubToken}`
+        },
+        body: JSON.stringify({
+          code: JSON.stringify(selectedTemplate, null, 2),
+          fileName,
+          commitMessage,
+          repo
+        })
+      });
+      const result = await response.json();
+      if (result.success) {
+        toast.success('Pushed to GitHub!');
+        setSyncStatus('success');
+      } else {
+        toast.error(result.error || 'Failed to push to GitHub');
+        setSyncStatus('error');
+      }
+    } catch (err) {
+      toast.error('Push failed. Please try again.');
+      setSyncStatus('error');
+    }
+    setTimeout(() => setSyncStatus('idle'), 3000);
+  };
 
   return (
     <ErrorBoundary>
@@ -238,10 +283,16 @@ function HomeContent() {
                   </>
                 }
               >
-                <BoltDisplayArea 
-                  selectedTemplate={selectedTemplate}
-                  onTemplateChange={setSelectedTemplate}
-                />
+                <div className="flex h-full">
+                  <Sidebar syncStatus={syncStatus} />
+                  <div className="flex-1">
+                    <BoltDisplayArea 
+                      selectedTemplate={selectedTemplate}
+                      onTemplateChange={setSelectedTemplate}
+                      onGitPush={() => handleGitPush(selectedTemplate)}
+                    />
+                  </div>
+                </div>
                 {/* Floating Action Buttons for Collaboration & Voting */}
                 <div className="fixed bottom-6 right-6 flex flex-col gap-4 z-50">
                   <button

@@ -4,7 +4,8 @@ import { useState } from 'react';
 import { FigmaDesignEditor } from './figma-design-editor';
 import { FigmaPropertiesPanel } from './figma-properties-panel';
 import { FigmaLayersPanel } from './figma-layers-panel';
-import { LoadingState, ErrorState } from '@/components/ui/error-state';
+import { LoadingState } from '@/components/ui/loading';
+import { ErrorState } from '@/components/ui/error-state';
 import { useRetry } from '@/hooks/useRetry';
 import { toast } from '@/components/ui/toast';
 

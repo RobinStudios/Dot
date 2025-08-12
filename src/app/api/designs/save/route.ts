@@ -21,8 +21,8 @@ export async function POST(request: NextRequest) {
     };
 
     // Store in memory for session persistence
-    global.designs = global.designs || new Map();
-    global.designs.set(savedDesign.id, savedDesign);
+  globalThis.designs = globalThis.designs || new Map();
+  globalThis.designs.set(savedDesign.id, savedDesign);
 
     return NextResponse.json({ 
       success: true, 

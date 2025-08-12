@@ -1,4 +1,4 @@
-import Replicate from 'replicate';
+import Replicate from 'replicate'; // Keeping this import as it is necessary for the functionality
 
 let replicateClient: Replicate | null = null;
 

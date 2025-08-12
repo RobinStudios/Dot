@@ -1,6 +1,6 @@
-'use client'
+"use client"
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { MockupTemplate } from '@/lib/templates/mockup-templates'
 import { VisualPreview } from './visual-preview'
 
@@ -9,7 +9,11 @@ interface BoltDisplayAreaProps {
   onTemplateChange: (template: MockupTemplate) => void
 }
 
-export function BoltDisplayArea({ selectedTemplate, onTemplateChange }: BoltDisplayAreaProps) {
+// ...existing code...
+import { toast } from '@/components/ui/toast';
+
+export function BoltDisplayArea({ selectedTemplate, onTemplateChange, onGitPush }: BoltDisplayAreaProps & { onGitPush?: () => void }) {
+  const [isPushing, setIsPushing] = useState(false);
   const [viewMode, setViewMode] = useState<'preview' | 'code'>('preview')
   const [designVariations, setDesignVariations] = useState<MockupTemplate[]>([])
 
@@ -52,7 +56,8 @@ export function BoltDisplayArea({ selectedTemplate, onTemplateChange }: BoltDisp
     return backgrounds[index] || backgrounds[0]
   }
 
-  useState(() => {
+  // Generate variations when selectedTemplate changes
+  useEffect(() => {
     if (selectedTemplate) {
       generateVariations(selectedTemplate)
     }
@@ -110,7 +115,25 @@ export function BoltDisplayArea({ selectedTemplate, onTemplateChange }: BoltDisp
             >
               💾 Save to Supabase
             </button>
-            <button className="btn-secondary text-sm">Push to GitHub</button>
+            <button 
+              className="btn-secondary text-sm flex items-center gap-2 relative"
+              disabled={isPushing}
+              title="Push current design to GitHub"
+              onClick={async () => {
+                if (isPushing) return;
+                setIsPushing(true);
+                toast.info('Pushing to GitHub...');
+                try {
+                  await onGitPush?.();
+                } finally {
+                  setTimeout(() => setIsPushing(false), 1200);
+                }
+              }}
+            >
+              <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12c0 4.42 2.87 8.17 6.84 9.49.5.09.66-.22.66-.48 0-.24-.01-.87-.01-1.7-2.78.6-3.37-1.34-3.37-1.34-.45-1.15-1.1-1.46-1.1-1.46-.9-.62.07-.61.07-.61 1 .07 1.53 1.03 1.53 1.03.89 1.52 2.34 1.08 2.91.83.09-.65.35-1.08.63-1.33-2.22-.25-4.56-1.11-4.56-4.95 0-1.09.39-1.98 1.03-2.68-.1-.25-.45-1.27.1-2.65 0 0 .84-.27 2.75 1.02A9.56 9.56 0 0112 6.8c.85.004 1.71.12 2.51.35 1.91-1.29 2.75-1.02 2.75-1.02.55 1.38.2 2.4.1 2.65.64.7 1.03 1.59 1.03 2.68 0 3.85-2.34 4.7-4.57 4.95.36.31.68.92.68 1.85 0 1.33-.01 2.4-.01 2.73 0 .27.16.58.67.48A10.01 10.01 0 0022 12c0-5.52-4.48-10-10-10z"/></svg>
+              <span>Push to GitHub</span>
+              {isPushing && <span className="absolute right-2"><svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"></path></svg></span>}
+            </button>
             <button 
               onClick={async () => {
                 if (!selectedTemplate) return

@@ -1,4 +1,5 @@
 import { CapacitorConfig } from '@capacitor/cli';
+import { KeyboardResize, KeyboardStyle } from '@capacitor/keyboard';
 
 const config: CapacitorConfig = {
   appId: 'com.aigraphicdesigner.app',
@@ -19,8 +20,8 @@ const config: CapacitorConfig = {
       backgroundColor: '#1f2937'
     },
     Keyboard: {
-      resize: 'body',
-      style: 'dark'
+      resize: KeyboardResize.Body,
+      style: KeyboardStyle.Dark
     }
   }
 };
