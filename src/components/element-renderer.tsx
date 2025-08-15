@@ -2,6 +2,7 @@
 
 import { motion } from 'framer-motion'
 import { DesignElement } from '@/types'
+import { useState, useEffect } from 'react'
 
 interface ElementRendererProps {
   element: DesignElement
@@ -11,6 +12,29 @@ interface ElementRendererProps {
 
 export function ElementRenderer({ element, isSelected, onClick }: ElementRendererProps) {
   const { type, position, size, style, content, src, children } = element
+  const [presignedSrc, setPresignedSrc] = useState<string | null>(null);
+
+  useEffect(() => {
+    if ((type === 'image' || type === 'video') && src) {
+      const fetchPresignedUrl = async () => {
+        try {
+          const response = await fetch(`/api/s3-presigned-url?key=${encodeURIComponent(src)}`);
+          if (response.ok) {
+            const data = await response.json();
+            setPresignedSrc(data.url);
+          } else {
+            console.error("Failed to fetch presigned URL");
+            setPresignedSrc(null);
+          }
+        } catch (error) {
+          console.error("Error fetching presigned URL:", error);
+          setPresignedSrc(null);
+        }
+      };
+      fetchPresignedUrl();
+    }
+  }, [src, type]);
+
 
   const baseStyles = {
     position: 'absolute' as const,
@@ -43,9 +67,9 @@ export function ElementRenderer({ element, isSelected, onClick }: ElementRendere
       case 'image':
         return (
           <div className="w-full h-full cursor-pointer overflow-hidden rounded">
-            {src ? (
+            {presignedSrc ? (
               <img
-                src={src}
+                src={presignedSrc}
                 alt={content || 'Image'}
                 className="w-full h-full object-cover"
               />
@@ -94,9 +118,9 @@ export function ElementRenderer({ element, isSelected, onClick }: ElementRendere
       case 'video':
         return (
           <div className="w-full h-full cursor-pointer overflow-hidden rounded">
-            {src ? (
+            {presignedSrc ? (
               <video
-                src={src}
+                src={presignedSrc}
                 className="w-full h-full object-cover"
                 controls
                 muted

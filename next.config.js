@@ -5,7 +5,12 @@ const nextConfig = {
     NEXT_PUBLIC_COGNITO_IDENTITY_POOL_ID: process.env.NEXT_PUBLIC_COGNITO_IDENTITY_POOL_ID,
   },
   images: {
-    domains: ['localhost'],
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: '**.s3.amazonaws.com',
+      },
+    ],
   },
   webpack: (config) => {
     config.resolve.fallback = {
