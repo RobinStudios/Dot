@@ -11,6 +11,8 @@ interface CollaboratorType {
   cursor?: { x: number; y: number }
 }
 
+export default CollaborationPanel;
+
 interface CommentType {
   id: string
   user: string

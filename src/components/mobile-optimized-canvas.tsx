@@ -11,6 +11,8 @@ interface MobileOptimizedCanvasProps {
   onElementDelete?: (elementId: string) => void;
 }
 
+import React, { useMemo } from 'react'
+
 export function MobileOptimizedCanvas({ elements, onElementSelect, onElementMove, onElementUpdate, onElementDelete }: MobileOptimizedCanvasProps) {
   const [scale, setScale] = useState(1)
   const [pan, setPan] = useState({ x: 0, y: 0 })
@@ -62,6 +64,63 @@ export function MobileOptimizedCanvas({ elements, onElementSelect, onElementMove
       onElementUpdate(selected.id, { [key]: value } as Partial<DesignElement>);
     }
   }
+
+  // Memoize element rendering for performance
+  const renderedElements = useMemo(() => (
+    elements.map((element) => (
+      <motion.div
+        key={element.id}
+        whileTap={{ scale: 0.95 }}
+      >
+        <div
+          className={`absolute cursor-pointer ${selectedElement === element.id ? 'ring-2 ring-blue-500' : ''}`}
+          style={{
+            left: element.position?.x ?? 0,
+            top: element.position?.y ?? 0,
+            width: element.size?.width ?? 100,
+            height: element.size?.height ?? 50,
+            backgroundColor: element.style?.backgroundColor ?? 'transparent',
+            color: element.style?.color ?? '#000',
+            fontSize: element.style?.fontSize ?? 16,
+            fontFamily: element.style?.fontFamily ?? 'inherit',
+            borderRadius: element.style?.borderRadius ?? 0,
+            boxShadow: element.style?.boxShadow ?? '',
+            opacity: element.style?.opacity ?? 1,
+            border: element.style?.borderColor && element.style?.borderWidth ? `${element.style.borderWidth}px solid ${element.style.borderColor}` : undefined,
+            zIndex: element.style && (element.style as any).zIndex !== undefined ? (element.style as any).zIndex : 1,
+            transition: 'all 0.2s',
+          }}
+          onTouchStart={(e) => handleElementTouchStart(element, e)}
+          onTouchMove={(e) => handleElementTouchMove(element, e)}
+          onTouchEnd={(e) => handleElementTouchEnd(element, e)}
+          tabIndex={0}
+          aria-label={element.type + (element.content ? `: ${element.content}` : '')}
+        >
+          {(() => {
+            switch (element.type) {
+              case 'text':
+                return <div className="w-full h-full flex items-center justify-center p-2">{element.content || 'Text Element'}</div>;
+              case 'shape':
+                return <div className="w-full h-full" style={{ backgroundColor: element.style?.backgroundColor || '#3b82f6', borderRadius: element.style?.borderRadius || 0 }} />;
+              case 'image':
+                return <img src={element.src || '/placeholder-image.png'} alt={'Design element'} className="w-full h-full object-cover rounded" loading="lazy" />;
+              case 'icon':
+                return <span className="w-full h-full flex items-center justify-center text-2xl">{element.content || '🔘'}</span>;
+              case 'button':
+                return <button className="w-full h-full bg-primary-500 text-white rounded-lg" aria-label={element.content || 'Button'}>{element.content || 'Button'}</button>;
+              case 'video':
+                return <video src={element.src} className="w-full h-full object-cover rounded" controls muted preload="metadata" />;
+              case 'container':
+                return <div className="w-full h-full border-2 border-dashed border-secondary-300 rounded">{element.children && element.children.length > 0 && (<div className="p-2 text-xs text-secondary-500">Container ({element.children.length} children)</div>)}</div>;
+              default:
+                return null;
+            }
+          })()}
+        </div>
+      </motion.div>
+    ))
+  ), [elements, selectedElement]);
+
   return (
     <div>
       {/* Zoom Controls */}
@@ -103,57 +162,8 @@ export function MobileOptimizedCanvas({ elements, onElementSelect, onElementMove
             }}
           />
 
-          {/* Design Elements */}
-          {elements.map((element) => (
-            <motion.div
-              key={element.id}
-              whileTap={{ scale: 0.95 }}
-            >
-              <div
-                className={`absolute cursor-pointer ${selectedElement === element.id ? 'ring-2 ring-blue-500' : ''}`}
-                style={{
-                  left: element.position?.x ?? 0,
-                  top: element.position?.y ?? 0,
-                  width: element.size?.width ?? 100,
-                  height: element.size?.height ?? 50,
-                  backgroundColor: element.style?.backgroundColor ?? 'transparent',
-                  color: element.style?.color ?? '#000',
-                  fontSize: element.style?.fontSize ?? 16,
-                  fontFamily: element.style?.fontFamily ?? 'inherit',
-                  borderRadius: element.style?.borderRadius ?? 0,
-                  boxShadow: element.style?.boxShadow ?? '',
-                  opacity: element.style?.opacity ?? 1,
-                  border: element.style?.borderColor && element.style?.borderWidth ? `${element.style.borderWidth}px solid ${element.style.borderColor}` : undefined,
-                  zIndex: element.style && (element.style as any).zIndex !== undefined ? (element.style as any).zIndex : 1,
-                  transition: 'all 0.2s',
-                }}
-                onTouchStart={(e) => handleElementTouchStart(element, e)}
-                onTouchMove={(e) => handleElementTouchMove(element, e)}
-                onTouchEnd={(e) => handleElementTouchEnd(element, e)}
-              >
-                {(() => {
-                  switch (element.type) {
-                    case 'text':
-                      return <div className="w-full h-full flex items-center justify-center p-2">{element.content || 'Text Element'}</div>;
-                    case 'shape':
-                      return <div className="w-full h-full" style={{ backgroundColor: element.style?.backgroundColor || '#3b82f6', borderRadius: element.style?.borderRadius || 0 }} />;
-                    case 'image':
-                      return <img src={element.src || '/placeholder-image.png'} alt={'Design element'} className="w-full h-full object-cover rounded" />;
-                    case 'icon':
-                      return <span className="w-full h-full flex items-center justify-center text-2xl">{element.content || '🔘'}</span>;
-                    case 'button':
-                      return <button className="w-full h-full bg-primary-500 text-white rounded-lg">{element.content || 'Button'}</button>;
-                    case 'video':
-                      return <video src={element.src} className="w-full h-full object-cover rounded" controls muted />;
-                    case 'container':
-                      return <div className="w-full h-full border-2 border-dashed border-secondary-300 rounded">{element.children && element.children.length > 0 && (<div className="p-2 text-xs text-secondary-500">Container ({element.children.length} children)</div>)}</div>;
-                    default:
-                      return null;
-                  }
-                })()}
-              </div>
-            </motion.div>
-          ))}
+          {/* Design Elements (memoized) */}
+          {renderedElements}
         </div>
       </div>
 

@@ -10,7 +10,9 @@ import { DesignSystemPanel } from './design-system-panel'
 
 type PanelType = 'layers' | 'properties' | 'tools' | 'design-system'
 
-export function Sidebar({ syncStatus }: { syncStatus?: string }) {
+import React from 'react'
+
+const SidebarComponent = ({ syncStatus }: { syncStatus?: string }) => {
   const [activePanel, setActivePanel] = useState<PanelType>('layers')
   const { currentMockup, selectedElements } = useDesignStore()
 
@@ -101,3 +103,5 @@ export function Sidebar({ syncStatus }: { syncStatus?: string }) {
     </div>
   )
 }
+
+export const Sidebar = React.memo(SidebarComponent);

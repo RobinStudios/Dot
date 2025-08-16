@@ -1,9 +1,9 @@
 export function sanitizeInput(input: string): string {
-  return input
-    .replace(/[<>]/g, '')
-    .replace(/javascript:/gi, '')
-    .replace(/on\w+=/gi, '')
-    .trim();
+  if (typeof input !== 'string') return '';
+  // Remove HTML tags and dangerous characters
+  const cleaned = input.replace(/[<>"'&]/g, '').replace(/\b(script|javascript|vbscript|onload|onerror)\b/gi, '');
+  // Additional sanitization for prompt injection
+  return cleaned.trim().substring(0, 1000);
 }
 
 export function validateMockupData(mockup: any): boolean {

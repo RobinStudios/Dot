@@ -2,6 +2,8 @@
 
 import { useState } from 'react'
 
+
+
 interface WebsiteCopierProps {
   onWebsiteCopied: (template: any) => void
 }
@@ -126,3 +128,5 @@ export function WebsiteCopier({ onWebsiteCopied }: WebsiteCopierProps) {
     </div>
   )
 }
+
+export default WebsiteCopier

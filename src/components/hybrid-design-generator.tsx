@@ -6,6 +6,8 @@ interface HybridDesignGeneratorProps {
   onDesignGenerated: (design: any) => void
 }
 
+export default HybridDesignGenerator;
+
 export function HybridDesignGenerator({ onDesignGenerated }: HybridDesignGeneratorProps) {
   const [prompt, setPrompt] = useState('')
   const [type, setType] = useState('landing')

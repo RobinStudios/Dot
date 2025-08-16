@@ -12,9 +12,9 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
     const { email, password } = LoginSchema.parse(body);
-    
     const sanitizedEmail = sanitizeInput(email.toLowerCase());
     
+    // Cognito authentication
     const user = await authService.verifyUser(sanitizedEmail, password);
     if (!user) {
       return NextResponse.json(
@@ -23,6 +23,7 @@ export async function POST(request: NextRequest) {
       );
     }
     
+    // Cognito session/JWT
     const token = await authService.createSession(user);
     
     return NextResponse.json({ 

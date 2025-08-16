@@ -332,3 +332,17 @@ export interface WorkflowTrigger {
   type: 'manual' | 'schedule' | 'webhook' | 'event';
   config: Record<string, any>;
 }
+
+export interface Template {
+  id: string;
+  name: string;
+  category: string;
+  preview_url: string;
+  code: string;
+  ai_prompts: string[];
+  is_public: boolean;
+  created_at: string;
+  updated_at: string;
+  source: string;
+  created_by?: string;
+}

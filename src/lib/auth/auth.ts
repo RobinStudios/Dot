@@ -1,160 +1,41 @@
-import bcrypt from 'bcryptjs';
-import jwt from 'jsonwebtoken';
 
-const JWT_SECRET = process.env.JWT_SECRET || 'fallback-secret-change-in-production';
+import { CognitoIdentityProviderClient, AdminInitiateAuthCommand, AdminCreateUserCommand, AdminGetUserCommand } from '@aws-sdk/client-cognito-identity-provider';
+import { cognitoConfig } from '@/lib/aws/cognito-setup';
 
 export interface User {
   id: string;
   email: string;
   name: string;
   avatar?: string;
+  subscription?: string;
+  createdAt?: Date;
 }
 
-// In-memory user storage for Lambda - users persist during Lambda execution
-const users: Map<string, { id: string; email: string; name: string; passwordHash: string }> = new Map();
-
-// Initialize with demo user for testing
-if (users.size === 0) {
-  const demoPasswordHash = '$2a$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi'; // 'password'
-  users.set('demo-user', {
-    id: 'demo-user',
-    email: 'demo@example.com',
-    name: 'Demo User',
-    passwordHash: demoPasswordHash
-  });
-}
-
-// In-memory password reset token storage
-const passwordResetTokens: Map<string, { userId: string; expiresAt: number }> = new Map();
-// In-memory email verification token storage
-const emailVerificationTokens: Map<string, { userId: string; expiresAt: number }> = new Map();
-
-function generateRandomToken(length = 48) {
-  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-  let result = '';
-  for (let i = 0; i < length; i++) {
-    result += chars.charAt(Math.floor(Math.random() * chars.length));
-  }
-  return result;
-}
+const cognitoClient = new CognitoIdentityProviderClient({ region: cognitoConfig.region });
 
 export class AuthService {
+  // TODO: Implement email verification and password reset using Cognito
 
-  /**
-   * Generate an email verification token for a user (expires in 24 hours)
-   */
-  async generateEmailVerificationToken(email: string): Promise<string | null> {
-    const user = Array.from(users.values()).find(u => u.email === email);
-    if (!user) return null;
-    const token = generateRandomToken(48);
-    const expiresAt = Date.now() + 1000 * 60 * 60 * 24; // 24 hours
-    emailVerificationTokens.set(token, { userId: user.id, expiresAt });
-    return token;
-  }
-
-  /**
-   * Verify a user's email using a valid token
-   */
-  async verifyEmail(token: string): Promise<boolean> {
-    const entry = emailVerificationTokens.get(token);
-    if (!entry || entry.expiresAt < Date.now()) {
-      emailVerificationTokens.delete(token);
-      return false;
-    }
-    const user = users.get(entry.userId);
-    if (!user) return false;
-    // Mark user as verified (add a property if needed)
-    (user as any).emailVerified = true;
-    emailVerificationTokens.delete(token);
-    return true;
-  }
-  /**
-   * Generate a password reset token for a user (expires in 1 hour)
-   */
-  async generatePasswordResetToken(email: string): Promise<string | null> {
-    const user = Array.from(users.values()).find(u => u.email === email);
-    if (!user) return null;
-    const token = generateRandomToken(48);
-    const expiresAt = Date.now() + 1000 * 60 * 60; // 1 hour
-    passwordResetTokens.set(token, { userId: user.id, expiresAt });
-    return token;
-  }
-
-  /**
-   * Reset a user's password using a valid token
-   */
-  async resetPassword(token: string, newPassword: string): Promise<boolean> {
-    const entry = passwordResetTokens.get(token);
-    if (!entry || entry.expiresAt < Date.now()) {
-      passwordResetTokens.delete(token);
-      return false;
-    }
-    const user = users.get(entry.userId);
-    if (!user) return false;
-    user.passwordHash = await bcrypt.hash(newPassword, 10);
-    passwordResetTokens.delete(token);
-    return true;
-  }
   async createUser(email: string, password: string, name: string): Promise<User> {
-    const existingUser = Array.from(users.values()).find(u => u.email === email);
-    if (existingUser) {
-      throw new Error('User already exists');
-    }
-
-    const passwordHash = await bcrypt.hash(password, 10);
-    const user = {
-      id: `user-${Date.now()}`,
-      email,
-      name,
-      passwordHash
-    };
-
-    users.set(user.id, user);
-    
-    return {
-      id: user.id,
-      email: user.email,
-      name: user.name
-    };
+    // Use Cognito sign-up API
+    // See AWS docs: https://docs.aws.amazon.com/cognito/latest/developerguide/signing-up-users.html
+    throw new Error('Use Cognito sign-up API here');
   }
 
   async verifyUser(email: string, password: string): Promise<User | null> {
-    const user = Array.from(users.values()).find(u => u.email === email);
-    if (!user) return null;
-
-    const isValid = await bcrypt.compare(password, user.passwordHash);
-    if (!isValid) return null;
-
-    return {
-      id: user.id,
-      email: user.email,
-      name: user.name
-    };
+    // Use Cognito authentication API
+    // See AWS docs: https://docs.aws.amazon.com/cognito/latest/developerguide/signing-in-users.html
+    throw new Error('Use Cognito authentication API here');
   }
 
   async createSession(user: User): Promise<string> {
-    return jwt.sign(
-      { userId: user.id, email: user.email },
-      JWT_SECRET,
-      { expiresIn: '7d' }
-    );
+    // Use Cognito session/JWT
+    throw new Error('Use Cognito session/JWT here');
   }
 
   async verifySession(token: string): Promise<User | null> {
-    try {
-      const decoded = jwt.verify(token, JWT_SECRET) as any;
-      const user = users.get(decoded.userId);
-      
-      if (!user) return null;
-      
-      return {
-        id: user.id,
-        email: user.email,
-        name: user.name
-      };
-    } catch {
-      return null;
-    }
+    // Use Cognito JWT verification
+    throw new Error('Use Cognito JWT verification here');
   }
 }
 

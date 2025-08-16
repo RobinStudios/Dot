@@ -1,7 +1,9 @@
-
 import { ddbDocClient } from '../aws/dynamodb-client';
+import { getSupabaseClient } from './client';
 import { PutCommand, QueryCommand, UpdateCommand, GetCommand, DeleteCommand } from '@aws-sdk/lib-dynamodb';
 import crypto from 'crypto';
+import { z } from 'zod';
+import { NextRequest } from 'next/server';
 
 export interface Project {
   id: string;
@@ -29,6 +31,9 @@ export interface Design {
 }
 
 const PROJECTS_TABLE = process.env.AWS_PROJECTS_TABLE || 'ai-designer-projects';
+const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
+const SUPABASE_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
+const supabase = getSupabaseClient(SUPABASE_URL, SUPABASE_KEY);
 const DESIGNS_TABLE = process.env.AWS_DESIGNS_TABLE || 'ai-designer-designs';
 
 export class ProjectService {
@@ -42,55 +47,36 @@ export class ProjectService {
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
     };
-    await ddbDocClient.send(new PutCommand({ TableName: PROJECTS_TABLE, Item: project }));
+    // Supabase insert
+    const { error } = await supabase.from('projects').insert([project]);
+    if (error) throw new Error(error.message);
     return project;
   }
 
   async getUserProjects(userId: string): Promise<Project[]> {
-    const params = {
-      TableName: PROJECTS_TABLE,
-      IndexName: 'owner_id-index',
-      KeyConditionExpression: 'owner_id = :uid',
-      ExpressionAttributeValues: { ':uid': userId },
-    };
-    const result = await ddbDocClient.send(new QueryCommand(params));
-    return (result.Items as Project[]) || [];
+    const { data, error } = await supabase.from('projects').select('*').eq('owner_id', userId);
+    if (error) throw new Error(error.message);
+    return (data as Project[]) || [];
   }
 
   async getProject(projectId: string, userId: string): Promise<Project | null> {
-    const params = {
-      TableName: PROJECTS_TABLE,
-      Key: { id: projectId },
-    };
-    const result = await ddbDocClient.send(new GetCommand(params));
-    const item = result.Item as Project | undefined;
-    if (!item || item.owner_id !== userId) return null;
-    return item;
+    const { data, error } = await supabase.from('projects').select('*').eq('id', projectId).eq('owner_id', userId).single();
+    if (error) return null;
+    return data as Project;
   }
 
   async updateProject(projectId: string, userId: string, updates: Partial<Project>): Promise<Project> {
-    const params = {
-      TableName: PROJECTS_TABLE,
-      Key: { id: projectId },
-      UpdateExpression: 'set #name = :name, description = :desc, updated_at = :updated',
-      ExpressionAttributeNames: { '#name': 'name' },
-      ExpressionAttributeValues: {
-        ':name': updates.name,
-        ':desc': updates.description,
-        ':updated': new Date().toISOString(),
-      },
-      ReturnValues: 'ALL_NEW',
-    };
-    const result = await ddbDocClient.send(new UpdateCommand(params));
-    return result.Attributes as Project;
+    const { data, error } = await supabase.from('projects').update({
+      ...updates,
+      updated_at: new Date().toISOString(),
+    }).eq('id', projectId).eq('owner_id', userId).select().single();
+    if (error) throw new Error(error.message);
+    return data as Project;
   }
 
   async deleteProject(projectId: string, userId: string): Promise<void> {
-    const params = {
-      TableName: PROJECTS_TABLE,
-      Key: { id: projectId },
-    };
-    await ddbDocClient.send(new DeleteCommand(params));
+    const { error } = await supabase.from('projects').delete().eq('id', projectId).eq('owner_id', userId);
+    if (error) throw new Error(error.message);
   }
 
   async saveDesign(projectId: string, design: Omit<Design, 'id' | 'created_at' | 'updated_at'>): Promise<Design> {
@@ -101,44 +87,62 @@ export class ProjectService {
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
     };
-    await ddbDocClient.send(new PutCommand({ TableName: DESIGNS_TABLE, Item: newDesign }));
+    const { error } = await supabase.from('designs').insert([newDesign]);
+    if (error) throw new Error(error.message);
     return newDesign;
   }
 
   async getDesigns(projectId: string): Promise<Design[]> {
-    const params = {
-      TableName: DESIGNS_TABLE,
-      IndexName: 'project_id-index',
-      KeyConditionExpression: 'project_id = :pid',
-      ExpressionAttributeValues: { ':pid': projectId },
-    };
-    const result = await ddbDocClient.send(new QueryCommand(params));
-    return (result.Items as Design[]) || [];
+    const { data, error } = await supabase.from('designs').select('*').eq('project_id', projectId);
+    if (error) throw new Error(error.message);
+    return (data as Design[]) || [];
   }
 
   async updateDesign(designId: string, updates: Partial<Design>): Promise<Design> {
-    const params = {
-      TableName: DESIGNS_TABLE,
-      Key: { id: designId },
-      UpdateExpression: 'set #name = :name, updated_at = :updated',
-      ExpressionAttributeNames: { '#name': 'name' },
-      ExpressionAttributeValues: {
-        ':name': updates.name,
-        ':updated': new Date().toISOString(),
-      },
-      ReturnValues: 'ALL_NEW',
-    };
-    const result = await ddbDocClient.send(new UpdateCommand(params));
-    return result.Attributes as Design;
+    const { data, error } = await supabase.from('designs').update({
+      ...updates,
+      updated_at: new Date().toISOString(),
+    }).eq('id', designId).select().single();
+    if (error) throw new Error(error.message);
+    return data as Design;
   }
 
   async deleteDesign(designId: string): Promise<void> {
-    const params = {
-      TableName: DESIGNS_TABLE,
-      Key: { id: designId },
-    };
-    await ddbDocClient.send(new DeleteCommand(params));
+    const { error } = await supabase.from('designs').delete().eq('id', designId);
+    if (error) throw new Error(error.message);
   }
 }
 
 export const projectService = new ProjectService();
+
+export const ProjectSchema = z.object({
+  name: z.string().min(1, 'Name is required'),
+  description: z.string().optional(),
+});
+
+export const DesignSchema = z.object({
+  name: z.string().min(1, 'Name is required'),
+  description: z.string().optional(),
+  prompt: z.string().optional(),
+  elements: z.array(z.unknown()).optional(),
+  layout: z.unknown().optional(),
+  color_scheme: z.unknown().optional(),
+  typography: z.unknown().optional(),
+  thumbnail_url: z.string().url().optional(),
+});
+
+// In your API route handler
+export async function POST(request: NextRequest) {
+  try {
+    const body = await request.json();
+    // Validate input using Zod schema
+    const validated = DesignSchema.parse(body);
+    // ...existing code...
+  } catch (error) {
+    // Handle validation errors
+    if (error instanceof z.ZodError) {
+      return new Response(JSON.stringify({ message: error.errors }), { status: 400 });
+    }
+    return new Response(JSON.stringify({ message: 'Internal Server Error' }), { status: 500 });
+  }
+}

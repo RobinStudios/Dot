@@ -170,3 +170,5 @@ export function CreativeEffectsPanel({ onApplyEffect }: CreativeEffectsPanelProp
     </div>
   )
 }
+
+export default CreativeEffectsPanel;

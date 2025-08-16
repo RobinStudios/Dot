@@ -39,6 +39,7 @@ A comprehensive AI-driven graphic design tool that generates complete design moc
 - **Responsive Design**: Mobile-first responsive layouts
 
 ## 🚀 Getting Started
+> **Note:** This project is under active security audit. All endpoints are being refactored for best practices and production-readiness. See the [SECURITY.md](SECURITY.md) for details.
 
 ### Prerequisites
 - Node.js 18+ 
@@ -69,18 +70,8 @@ A comprehensive AI-driven graphic design tool that generates complete design moc
 
 2. **Install dependencies**
    ```bash
-   npm install
-   ```
 
 3. **Configure AWS settings**
-   Update `next.config.js` with your AWS configuration:
-   ```javascript
-   env: {
-     NEXT_PUBLIC_AWS_REGION: 'us-east-1',
-     NEXT_PUBLIC_COGNITO_IDENTITY_POOL_ID: 'us-east-1:your-identity-pool-id',
-   }
-   ```
-
 4. **Run the development server**
    ```bash
    npm run dev
@@ -143,13 +134,14 @@ A comprehensive AI-driven graphic design tool that generates complete design moc
 ## 🏗️ Architecture
 
 ### Tech Stack
-- **Frontend**: Next.js 14, React 18, TypeScript
-- **Styling**: Tailwind CSS, Framer Motion
-- **State Management**: Zustand
-- **AI Services**: AWS Bedrock (Claude 3, Stable Diffusion XL)
-- **Authentication**: AWS Cognito Identity Pool
-- **Real-time**: Socket.io
-- **Deployment**: Vercel
+
+### Security Architecture
+- **Authentication**: All endpoints require Cognito JWT or session token
+- **Rate Limiting**: All sensitive endpoints are rate-limited (see `src/lib/security/rate-limit.ts`)
+- **Input Validation**: Zod schemas for all API routes
+- **Logging**: Centralized error and access logging
+- **Secrets Management**: AWS IAM roles and environment variables
+- **CSRF & Security Headers**: Enforced via Next.js middleware
 
 ### AI System Architecture
 - **Adaptive Agent Registry**: Manages AI models and capabilities
@@ -206,23 +198,27 @@ A comprehensive AI-driven graphic design tool that generates complete design moc
 - **Code Generation**: Claude 3 for HTML/React/Vue export
 
 ### Customization
+1. **Clone the repository**
+   ```bash
+   git clone https://github.com/your-username/ai-graphic-designer.git
+   cd ai-graphic-designer
+   ```
 
-1. **AI Agent Configuration**
-   - Modify agent specialties in `src/lib/ai/agent-registry.ts`
-   - Add custom AI providers via API endpoints
-   - Configure task-to-agent mappings
+2. **Install dependencies**
+   ```bash
+   npm install
+   ```
 
-2. **Export Formats**
-   - Extend bulk export engine in `src/lib/ai/bulk-export-engine.ts`
-   - Add new framework support (Svelte, Angular, etc.)
-   - Customize code generation templates
+3. **Configure AWS settings**
+   # See AWS_SETUP.md and SECURITY.md for IAM and Cognito configuration
 
-## 🚀 Deployment
+4. **Run the development server**
+   ```bash
+   npm run dev
+   ```
 
-### Vercel (Recommended)
-
-1. **Connect to Vercel**
-   - Push code to GitHub
+5. **Open your browser**
+   Navigate to [http://localhost:3000](http://localhost:3000)
    - Connect repository to Vercel
    - Configure environment variables
    - Deploy automatically

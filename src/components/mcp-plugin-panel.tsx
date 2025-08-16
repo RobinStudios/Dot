@@ -13,6 +13,8 @@ interface MCPPlugin {
   icon: string
 }
 
+export default MCPPluginPanel;
+
 export function MCPPluginPanel() {
   const [plugins, setPlugins] = useState<MCPPlugin[]>([])
   const [selectedPlugin, setSelectedPlugin] = useState<string>('')

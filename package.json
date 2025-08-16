@@ -14,8 +14,10 @@
   },
   "dependencies": {
     "@aws-sdk/client-bedrock-runtime": "^3.450.0",
+    "@aws-sdk/client-cognito-identity-provider": "^3.865.0",
     "@aws-sdk/client-s3": "^3.864.0",
     "@aws-sdk/credential-providers": "^3.450.0",
+    "@aws-sdk/lib-dynamodb": "^3.864.0",
     "@capacitor/android": "^5.5.0",
     "@capacitor/cli": "^5.5.0",
     "@capacitor/core": "^5.5.0",

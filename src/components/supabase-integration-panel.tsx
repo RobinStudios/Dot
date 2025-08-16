@@ -1,6 +1,4 @@
-'use client';
-
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Database, ExternalLink, Check, AlertCircle } from 'lucide-react';
 import { toast } from '@/components/ui/toast';
 import { LoadingSpinner } from '@/components/ui/loading';
@@ -15,6 +13,9 @@ export default function SupabaseIntegrationPanel() {
   const [config, setConfig] = useState<SupabaseConfig>({ url: '', anonKey: '' });
   const [isConnected, setIsConnected] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [orgUrl, setOrgUrl] = useState<string | null>(null);
+  const [orgProjects, setOrgProjects] = useState<any[]>([]);
+  const [selectedProject, setSelectedProject] = useState<string | null>(null);
 
   const testConnection = async () => {
     if (!config.url || !config.anonKey) {
@@ -35,12 +36,16 @@ export default function SupabaseIntegrationPanel() {
       if (result.success) {
         setIsConnected(true);
         toast.success('Connected to Supabase successfully!');
-        localStorage.setItem('supabase_config', JSON.stringify(config));
+        // Extract organization/project dashboard link from Supabase URL
+        const match = config.url.match(/^https:\/\/(.+)\.supabase\.co/);
+        if (match) {
+          setOrgUrl(`https://app.supabase.com/project/${match[1]}`);
+        }
       } else {
-        toast.error(result.error || 'Connection failed');
+        toast.error(result.error || 'Failed to connect');
       }
     } catch (error) {
-      toast.error('Failed to test connection');
+      toast.error('Connection failed');
     } finally {
       setIsLoading(false);
     }
@@ -76,6 +81,24 @@ export default function SupabaseIntegrationPanel() {
       setIsLoading(false);
     }
   };
+
+  useEffect(() => {
+    if (orgUrl && isConnected) {
+      // Fetch organization projects from Supabase API (requires service role key)
+      // This is a placeholder for demonstration; replace with secure backend API call in production
+      const fetchProjects = async () => {
+        try {
+          const orgId = orgUrl.split('/').pop();
+          const response = await fetch(`/api/integrations/supabase/org-projects?orgId=${orgId}`);
+          const result = await response.json();
+          if (result.success) {
+            setOrgProjects(result.projects);
+          }
+        } catch {}
+      };
+      fetchProjects();
+    }
+  }, [orgUrl, isConnected]);
 
   return (
     <div className="h-full bg-obsidian border-l border-graphite-mist overflow-y-auto">
@@ -149,12 +172,35 @@ export default function SupabaseIntegrationPanel() {
         </button>
 
         {isConnected && (
-          <div className="bg-green-900/20 border border-green-700/30 rounded-lg p-3">
-            <div className="flex items-center gap-2">
-              <Check className="w-4 h-4 text-green-400" />
-              <p className="text-sm text-green-400">Connected to Supabase</p>
-            </div>
-            <p className="text-xs text-green-300 mt-1">You can now deploy designs to your database</p>
+          <div className="mt-4 p-4 border rounded bg-green-50">
+            <Check className="inline-block mr-2 text-green-600" /> Connected!
+            {orgUrl && (
+              <div className="mt-2">
+                <a href={orgUrl} target="_blank" rel="noopener noreferrer" className="text-blue-700 underline flex items-center">
+                  <ExternalLink className="inline-block mr-1" /> Manage Supabase Project
+                </a>
+              </div>
+            )}
+            {orgProjects.length > 0 && (
+              <div className="mt-4">
+                <label className="block font-medium mb-2">Switch Project</label>
+                <select
+                  value={selectedProject || ''}
+                  onChange={e => setSelectedProject(e.target.value)}
+                  className="w-full border p-2 rounded"
+                >
+                  <option value="">Select a project</option>
+                  {orgProjects.map((proj: any) => (
+                    <option key={proj.id} value={proj.id}>{proj.name}</option>
+                  ))}
+                </select>
+              </div>
+            )}
+            {selectedProject && (
+              <div className="mt-4">
+                <button className="bg-blue-700 text-white px-4 py-2 rounded">Manage Resources for Project</button>
+              </div>
+            )}
           </div>
         )}
 

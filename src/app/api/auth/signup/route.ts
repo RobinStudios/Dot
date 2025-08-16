@@ -14,45 +14,23 @@ export async function POST(request: NextRequest) {
     // CSRF Protection
     const origin = request.headers.get('origin');
     const allowedOrigins = [process.env.NEXT_PUBLIC_APP_URL, 'http://localhost:3000'];
-    
     if (!origin || !allowedOrigins.includes(origin)) {
       return NextResponse.json({ error: 'Invalid origin' }, { status: 403 });
     }
-
     const body = await request.json();
     const validatedData = SignupSchema.parse(body);
-    
-    // Sanitize inputs
     const sanitizedEmail = sanitizeInput(validatedData.email.toLowerCase());
     const sanitizedName = sanitizeInput(validatedData.name);
-    
-    // Create user in database
-    const user = await authService.createUser(
-      sanitizedEmail,
-      validatedData.password,
-      sanitizedName
-    );
-    
-    // Create session
+    // Cognito sign-up
+    const user = await authService.createUser(sanitizedEmail, validatedData.password, sanitizedName);
+    // Cognito session/JWT
     const token = await authService.createSession(user);
-    
-    return NextResponse.json({ 
-      user, 
-      token 
-    });
-    
+    return NextResponse.json({ user, token });
   } catch (error) {
     if (error instanceof z.ZodError) {
-      return NextResponse.json(
-        { error: 'Invalid input data' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'Invalid input data' }, { status: 400 });
     }
-    
     console.error('Signup error:', error);
-    return NextResponse.json(
-      { error: 'Signup failed' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Signup failed' }, { status: 500 });
   }
 }

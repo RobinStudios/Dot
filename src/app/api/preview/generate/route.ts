@@ -1,4 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { rateLimit } from '@/lib/security/rate-limit';
+import { logError } from '@/lib/utils/api-helpers';
+import { authService } from '@/lib/auth/auth';
+import { z } from 'zod';
+
+const PreviewSchema = z.object({
+  code: z.string().min(1)
+});
 
 export async function POST(request: NextRequest) {
   try {
@@ -26,10 +34,24 @@ export async function POST(request: NextRequest) {
 </body>
 </html>`;
 
+    const rate = await rateLimit(request, { max: 10, window: 60000 });
+    if (!rate.success) {
+      return NextResponse.json({ success: false, error: 'Rate limit exceeded' }, { status: 429 });
+    }
+    const token = request.headers.get('authorization')?.replace('Bearer ', '');
+    if (!token) {
+      return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
+    }
+    const user = await authService.verifySession(token);
+    if (!user) {
+      return NextResponse.json({ success: false, error: 'Invalid token' }, { status: 401 });
+    }
+    const body = await request.json();
+    const { code } = PreviewSchema.parse(body);
+
     return NextResponse.json({ html });
   } catch (error: any) {
-    return NextResponse.json({ 
-      error: error.message || 'Preview generation failed' 
-    }, { status: 500 });
+    logError('PreviewGenerateAPI', error);
+    return NextResponse.json({ error: error.message || 'Preview generation failed' }, { status: 500 });
   }
 }

@@ -1,13 +1,6 @@
+// Cognito/AWS is the main backend and authentication provider.
+// Supabase client is provided for user deployment/export only.
 import { createClient } from '@supabase/supabase-js';
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://your-project.supabase.co';
-const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
-
-export const db = createClient(supabaseUrl, supabaseKey, {
-  auth: { persistSession: false }
-});
-
-export const publicDb = createClient(
-  supabaseUrl,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ''
-);
+export const getSupabaseClient = (url: string, key: string) => createClient(url, key);
+// Supabase logic removed. Use AWS/DynamoDB client here if needed.

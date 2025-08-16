@@ -1,7 +1,11 @@
-import { NextRequest, NextResponse } from 'next/server';
+
+import { NextRequest } from 'next/server';
 import { authService } from '@/lib/auth/auth';
-import { db } from '@/lib/db/client';
+import { logError, apiError, apiSuccess } from '@/lib/utils/api-helpers';
 import { z } from 'zod';
+
+// In-memory session store (replace with AWS-native logic for production)
+const collaborationSessions: Record<string, { project_id: string; active_users: string[]; expires_at: string }> = {};
 
 const CollaborationSchema = z.object({
   projectId: z.string().uuid(),
@@ -13,68 +17,50 @@ export async function POST(request: NextRequest) {
   try {
     const token = request.headers.get('authorization')?.replace('Bearer ', '');
     if (!token) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      return apiError('Unauthorized', 401);
     }
 
     const user = await authService.verifySession(token);
     if (!user) {
-      return NextResponse.json({ error: 'Invalid token' }, { status: 401 });
+      return apiError('Invalid token', 401);
     }
 
     const body = await request.json();
     const { projectId, action, data } = CollaborationSchema.parse(body);
 
+
     switch (action) {
-      case 'join':
-        const { data: session, error: joinError } = await db
-          .from('collaboration_sessions')
-          .upsert({
-            project_id: projectId,
-            active_users: [user.id],
-            expires_at: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString()
-          }, {
-            onConflict: 'project_id'
-          })
-          .select()
-          .single();
-
-        if (joinError) throw new Error(joinError.message);
-        return NextResponse.json({ session });
-
-      case 'leave':
-        await db
-          .from('collaboration_sessions')
-          .delete()
-          .eq('project_id', projectId);
-        
-        return NextResponse.json({ success: true });
-
-      case 'update':
-        const { error: updateError } = await db
-          .from('collaboration_sessions')
-          .update({
-            active_users: data.activeUsers || [user.id],
-            expires_at: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString()
-          })
-          .eq('project_id', projectId);
-
-        if (updateError) throw new Error(updateError.message);
-        return NextResponse.json({ success: true });
-
+      case 'join': {
+        // Add or update session
+        collaborationSessions[projectId] = {
+          project_id: projectId,
+          active_users: [user.id],
+          expires_at: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
+        };
+  return apiSuccess({ session: collaborationSessions[projectId] });
+      }
+      case 'leave': {
+        delete collaborationSessions[projectId];
+  return apiSuccess({ success: true });
+      }
+      case 'update': {
+        if (!collaborationSessions[projectId]) {
+          return apiError('Session not found', 404);
+        }
+        collaborationSessions[projectId].active_users = data.activeUsers || [user.id];
+        collaborationSessions[projectId].expires_at = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
+  return apiSuccess({ success: true });
+      }
       default:
-        return NextResponse.json({ error: 'Invalid action' }, { status: 400 });
+  return apiError('Invalid action', 400);
     }
 
   } catch (error) {
     if (error instanceof z.ZodError) {
-      return NextResponse.json(
-        { error: 'Invalid input data' },
-        { status: 400 }
-      );
+      return apiError('Invalid input data', 400);
     }
-    
-    console.error('Collaboration error:', error);
-    return NextResponse.json({ error: 'Collaboration failed' }, { status: 500 });
+    logError('CollaborationAPI', error);
+    return apiError('Collaboration failed', 500);
   }
 }
 
@@ -82,32 +68,28 @@ export async function GET(request: NextRequest) {
   try {
     const token = request.headers.get('authorization')?.replace('Bearer ', '');
     if (!token) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      return apiError('Unauthorized', 401);
     }
 
     const user = await authService.verifySession(token);
     if (!user) {
-      return NextResponse.json({ error: 'Invalid token' }, { status: 401 });
+      return apiError('Invalid token', 401);
     }
 
     const { searchParams } = new URL(request.url);
     const projectId = searchParams.get('projectId');
 
     if (!projectId) {
-      return NextResponse.json({ error: 'Project ID required' }, { status: 400 });
+      return apiError('Project ID required', 400);
     }
 
-    const { data: session } = await db
-      .from('collaboration_sessions')
-      .select('*')
-      .eq('project_id', projectId)
-      .gt('expires_at', new Date().toISOString())
-      .single();
-
-    return NextResponse.json({ session });
-
+    const session = collaborationSessions[projectId];
+    if (!session || new Date(session.expires_at) < new Date()) {
+      return apiSuccess({ session: null });
+    }
+    return apiSuccess({ session });
   } catch (error) {
-    console.error('Collaboration fetch error:', error);
-    return NextResponse.json({ error: 'Failed to fetch collaboration' }, { status: 500 });
+    logError('CollaborationAPI-GET', error);
+    return apiError('Failed to fetch collaboration', 500);
   }
 }

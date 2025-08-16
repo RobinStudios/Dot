@@ -1,63 +1,48 @@
-
 import { ddbDocClient } from '../aws/dynamodb-client';
 import { PutCommand, QueryCommand } from '@aws-sdk/lib-dynamodb';
-import crypto from 'crypto';
+import { Template } from '../../types';
 
-export interface Template {
-  id: string;
-  name: string;
-  category: 'landing' | 'dashboard' | 'ecommerce' | 'portfolio' | 'blog';
-  preview_url?: string;
-  code: string;
-  ai_prompts: string[];
-  is_public: boolean;
-  created_by?: string;
-  created_at: string;
-  updated_at: string;
-}
-
-
-const TEMPLATES_TABLE = process.env.AWS_TEMPLATES_TABLE || 'ai-designer-templates';
-
-export class TemplateService {
-  async getPublicTemplates(): Promise<Template[]> {
-    const params = {
-      TableName: TEMPLATES_TABLE,
-      IndexName: 'is_public-index',
-      KeyConditionExpression: 'is_public = :pub',
-      ExpressionAttributeValues: { ':pub': true },
-      ScanIndexForward: false,
-    };
-    const result = await ddbDocClient.send(new QueryCommand(params));
-    return (result.Items as Template[]) || this.getFallbackTemplates();
-  }
-
-  async getUserTemplates(userId: string): Promise<Template[]> {
-    const params = {
-      TableName: TEMPLATES_TABLE,
-      IndexName: 'created_by-index',
-      KeyConditionExpression: 'created_by = :uid',
-      ExpressionAttributeValues: { ':uid': userId },
-      ScanIndexForward: false,
-    };
-    const result = await ddbDocClient.send(new QueryCommand(params));
-    return (result.Items as Template[]) || [];
-  }
-
-  async createTemplate(template: Omit<Template, 'id' | 'created_at' | 'updated_at'>): Promise<Template> {
-    const now = new Date().toISOString();
-    const newTemplate = {
-      ...template,
-      id: crypto.randomUUID(),
-      created_at: now,
-      updated_at: now,
-    };
-    await ddbDocClient.send(new PutCommand({ TableName: TEMPLATES_TABLE, Item: newTemplate }));
-    return newTemplate;
-  }
-
+class TemplateService {
   private getFallbackTemplates(): Template[] {
     return [
+      {
+        id: 'framer-landing',
+        name: 'Framer Landing Page',
+        category: 'landing',
+        preview_url: '/templates/framer-landing.png',
+        code: `import { Frame, useCycle } from "framer";
+export default function FramerLanding() {
+  const [color, cycleColor] = useCycle("#fff", "#f0f4ff", "#e0e7ff");
+  return (
+    <Frame background={color} width="100%" height="100vh">
+      <Frame center width={600} height={400} background="#fff" radius={32} shadow="0 8px 32px rgba(0,0,0,0.08)">
+        <h1 style={{ fontSize: 48, fontWeight: 700, marginBottom: 24 }}>Framer Pro Landing</h1>
+        <p style={{ fontSize: 20, color: '#555', marginBottom: 32 }}>
+          Beautiful, animated, and responsive landing page built with Framer best practices.
+        </p>
+        <button style={{ padding: '16px 32px', fontSize: 18, borderRadius: 12, background: '#2563eb', color: '#fff', fontWeight: 600 }} onClick={cycleColor}>
+          Try Animation
+        </button>
+      </Frame>
+    </Frame>
+  );
+}
+`,
+        ai_prompts: [
+          'Use Framer Frame for layout and animation',
+          'Apply responsive design and spacing',
+          'Use cycleColor for interactive UI',
+          'Follow UI/UX best practices: clear hierarchy, readable fonts, accessible colors',
+          'Add animated transitions for buttons and sections',
+          'Include call-to-action with strong contrast',
+          'Optimize for mobile and desktop',
+          'Use semantic HTML and ARIA roles where possible'
+        ],
+        is_public: true,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+        source: 'framer'
+      },
       {
         id: 'saas-landing',
         name: 'SaaS Landing Page',
@@ -86,13 +71,49 @@ export class TemplateService {
       </main>
     </div>
   );
-}`,
-        ai_prompts: ['Change the color scheme to green', 'Add a features section', 'Make it more modern'],
+}
+`,
+        ai_prompts: [
+          'Use clear visual hierarchy',
+          'Apply modern color palette',
+          'Include call-to-action',
+          'Optimize for mobile and desktop',
+          'Use accessible contrast and font sizes',
+          'Add testimonials section',
+          'Follow UI/UX best practices'
+        ],
         is_public: true,
         created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
+        updated_at: new Date().toISOString(),
+        source: 'custom'
       }
     ];
+  }
+
+  public getPublicTemplates(): Template[] {
+    return this.getFallbackTemplates();
+  }
+
+  public getUserTemplates(userId: string): Template[] {
+    // For now, return public templates as a placeholder
+    return this.getFallbackTemplates();
+  }
+
+  public async createTemplate(templateData: Partial<Template>): Promise<Template> {
+    // Stub: just return the input with a generated id and timestamps
+    return {
+      id: Math.random().toString(36).substring(2, 12),
+      name: templateData.name || 'Untitled',
+      category: templateData.category || 'uncategorized',
+      preview_url: templateData.preview_url || '',
+      code: templateData.code || '',
+      ai_prompts: templateData.ai_prompts || [],
+      is_public: templateData.is_public ?? true,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+      source: templateData.source || 'custom',
+      created_by: templateData.created_by,
+    };
   }
 }
 

@@ -1,6 +1,6 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest } from 'next/server';
 import { authService } from '@/lib/auth/auth';
-import { db } from '@/lib/db/client';
+import { logError, apiError, apiSuccess } from '@/lib/utils/api-helpers';
 import { z } from 'zod';
 import JSZip from 'jszip';
 
@@ -46,12 +46,12 @@ export async function POST(request: NextRequest) {
   try {
     const token = request.headers.get('authorization')?.replace('Bearer ', '');
     if (!token) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      return apiError('Unauthorized', 401);
     }
 
     const user = await authService.verifySession(token);
     if (!user) {
-      return NextResponse.json({ error: 'Invalid token' }, { status: 401 });
+      return apiError('Invalid token', 401);
     }
 
     const body = await request.json();
@@ -60,13 +60,10 @@ export async function POST(request: NextRequest) {
     const zip = new JSZip();
     const results = [];
 
+    // Use DynamoDB GSI to fetch each design by ID
+    const { projectService } = await import('@/lib/db/projects');
     for (const designId of designIds) {
-      const { data: design } = await db
-        .from('designs')
-        .select('*')
-        .eq('id', designId)
-        .single();
-
+      const design = await projectService.getDesignById(designId);
       if (!design) continue;
 
       let code = '';
@@ -82,11 +79,11 @@ export async function POST(request: NextRequest) {
           filename = `${design.name.replace(/\s+/g, '-').toLowerCase()}.tsx`;
           break;
         case 'vue':
-          code = `<template>\n  <div class="container">\n    <!-- Vue implementation -->\n  </div>\n</template>\n\n<script>\nexport default {\n  name: '${design.name.replace(/\s+/g, '')}'\n}\n</script>`;
+          code = `<template>\n  <div class=\"container\">\n    <!-- Vue implementation -->\n  </div>\n</template>\n\n<script>\nexport default {\n  name: '${design.name.replace(/\s+/g, '')}'\n}\n</script>`;
           filename = `${design.name.replace(/\s+/g, '-').toLowerCase()}.vue`;
           break;
         case 'angular':
-          code = `import { Component } from '@angular/core';\n\n@Component({\n  selector: 'app-${design.name.replace(/\s+/g, '-').toLowerCase()}',\n  template: \`<div class="container"><!-- Angular implementation --></div>\`\n})\nexport class ${design.name.replace(/\s+/g, '')}Component {}`;
+          code = `import { Component } from '@angular/core';\n\n@Component({\n  selector: 'app-${design.name.replace(/\s+/g, '-').toLowerCase()}',\n  template: \`<div class=\"container\"><!-- Angular implementation --></div>\`\n})\nexport class ${design.name.replace(/\s+/g, '')}Component {}`;
           filename = `${design.name.replace(/\s+/g, '-').toLowerCase()}.component.ts`;
           break;
       }
@@ -98,7 +95,7 @@ export async function POST(request: NextRequest) {
     const zipBuffer = await zip.generateAsync({ type: 'nodebuffer' });
     const base64Zip = zipBuffer.toString('base64');
 
-    return NextResponse.json({ 
+    return apiSuccess({
       results,
       downloadUrl: `data:application/zip;base64,${base64Zip}`,
       filename: `designs-export-${format}.zip`
@@ -106,16 +103,9 @@ export async function POST(request: NextRequest) {
     
   } catch (error) {
     if (error instanceof z.ZodError) {
-      return NextResponse.json(
-        { error: 'Invalid input data' },
-        { status: 400 }
-      );
+      return apiError('Invalid input data', 400);
     }
-    
-    console.error('Export error:', error);
-    return NextResponse.json(
-      { error: 'Export failed' },
-      { status: 500 }
-    );
+    logError('ExportBulkAPI', error);
+    return apiError('Export failed', 500);
   }
 }

@@ -7,12 +7,13 @@ import { ThemeToggle } from '@/components/theme-provider'
 import { BoltIntegration } from '@/components/bolt-integration'
 import { VisualPreview } from '@/components/visual-preview'
 import { AuthProvider, LoginModal, useAuth } from '@/components/auth-provider'
-import { CollaborationPanel } from '@/components/collaboration-panel'
-import { AIProviderSelector } from '@/components/ai-provider-selector'
-import { HybridDesignGenerator } from '@/components/hybrid-design-generator'
-import { CreativeEffectsPanel } from '@/components/creative-effects-panel'
-import { MCPPluginPanel } from '@/components/mcp-plugin-panel'
-import { WebsiteCopier } from '@/components/website-copier'
+import React, { Suspense } from 'react'
+const CollaborationPanel = React.lazy(() => import('@/components/collaboration-panel'));
+const AIProviderSelector = React.lazy(() => import('@/components/ai-provider-selector'));
+const HybridDesignGenerator = React.lazy(() => import('@/components/hybrid-design-generator'));
+const CreativeEffectsPanel = React.lazy(() => import('@/components/creative-effects-panel'));
+const MCPPluginPanel = React.lazy(() => import('@/components/mcp-plugin-panel'));
+const WebsiteCopier = React.lazy(() => import('@/components/website-copier'));
 import { BoltDisplayArea } from '@/components/bolt-display-area'
 import { Sidebar } from '@/components/sidebar'
 import { MobileLayout } from '@/components/mobile-layout'
@@ -238,7 +239,16 @@ function HomeContent() {
                   />
                 }
                 sidebarContent={
-                  <>
+                  <Suspense fallback={
+                    <div className="p-4">
+                      <div className="animate-pulse space-y-4">
+                        <div className="h-6 bg-gray-300 rounded w-1/2 mx-auto" />
+                        <div className="h-10 bg-gray-200 rounded" />
+                        <div className="h-10 bg-gray-200 rounded" />
+                        <div className="h-10 bg-gray-200 rounded" />
+                      </div>
+                    </div>
+                  }>
                     {showCollaboration && user && <CollaborationPanel />}
                     {showAIGenerator && (
                       <AIProviderSelector 
@@ -270,7 +280,9 @@ function HomeContent() {
                         }}
                       />
                     )}
-                    {showMCPPlugins && <MCPPluginPanel />}
+                    {showMCPPlugins && (
+                      <MCPPluginPanel />
+                    )}
                     {showWebsiteCopier && (
                       <WebsiteCopier 
                         onWebsiteCopied={(template) => {
@@ -280,7 +292,29 @@ function HomeContent() {
                         }}
                       />
                     )}
-                  </>
+                    {/* Desktop sidebar panels for mobile parity */}
+                    <div className="mt-4">
+                      <h3 className="text-base font-semibold mb-2">Design Panels</h3>
+                      <div className="space-y-2">
+                        <div className="rounded bg-white dark:bg-gray-800 p-2 shadow">
+                          <span className="font-medium">Layers</span>
+                          <Sidebar syncStatus={syncStatus} />
+                        </div>
+                        <div className="rounded bg-white dark:bg-gray-800 p-2 shadow">
+                          <span className="font-medium">Properties</span>
+                          {/* PropertiesPanel can be rendered here if needed */}
+                        </div>
+                        <div className="rounded bg-white dark:bg-gray-800 p-2 shadow">
+                          <span className="font-medium">Tools</span>
+                          {/* ToolsPanel can be rendered here if needed */}
+                        </div>
+                        <div className="rounded bg-white dark:bg-gray-800 p-2 shadow">
+                          <span className="font-medium">Design System</span>
+                          {/* DesignSystemPanel can be rendered here if needed */}
+                        </div>
+                      </div>
+                    </div>
+                  </Suspense>
                 }
               >
                 <div className="flex h-full">
@@ -470,7 +504,9 @@ function HomeContent() {
                   }}
                 />
               )}
-              {showMCPPlugins && <MCPPluginPanel />}
+              {showMCPPlugins && (
+                <MCPPluginPanel />
+              )}
               {showWebsiteCopier && (
                 <WebsiteCopier 
                   onWebsiteCopied={(template) => {

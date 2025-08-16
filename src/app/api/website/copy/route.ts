@@ -1,4 +1,5 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest } from 'next/server';
+import { logError, apiError, apiSuccess } from '@/lib/utils/api-helpers';
 import { z } from 'zod';
 import { sanitizeUrl } from '@/lib/security/csrf';
 import { validateUrl } from '@/lib/security/validation';
@@ -14,7 +15,7 @@ export async function POST(request: NextRequest) {
     // Rate limiting
     const rateLimitResult = await rateLimit(request, { max: 5, window: 60000 });
     if (!rateLimitResult.success) {
-      return NextResponse.json({ error: 'Rate limit exceeded' }, { status: 429 });
+  return apiError('Rate limit exceeded', 429);
     }
 
     const formData = await request.formData();
@@ -26,13 +27,13 @@ export async function POST(request: NextRequest) {
 
     // Only allow screenshot method - remove dangerous wget functionality
     if (validatedData.method !== 'screenshot') {
-      return NextResponse.json({ error: 'Only screenshot method allowed' }, { status: 400 });
+  return apiError('Only screenshot method allowed', 400);
     }
 
     if (method === 'screenshot') {
       const screenshot = formData.get('screenshot') as File;
       if (!screenshot) {
-        return NextResponse.json({ error: 'Screenshot is required' }, { status: 400 });
+        return apiError('Screenshot is required', 400);
       }
 
       const bytes = await screenshot.arrayBuffer();
@@ -75,19 +76,18 @@ export async function POST(request: NextRequest) {
         aiPrompts: ['Enhance the layout', 'Improve colors', 'Add interactivity']
       };
 
-      return NextResponse.json({
+      return apiSuccess({
         success: true,
         template,
         method: 'screenshot'
       });
     }
 
-    return NextResponse.json({ error: 'Invalid method' }, { status: 400 });
+  return apiError('Invalid method', 400);
 
   } catch (error: any) {
-    return NextResponse.json({ 
-      error: error.message || 'Website copying failed' 
-    }, { status: 500 });
+    logError('WebsiteCopyAPI', error);
+    return apiError(error?.message || 'Website copying failed', 500);
   }
 }
 

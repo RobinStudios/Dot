@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { supabaseClient } from '@/lib/integrations/supabase-client';
+// Removed Supabase client import; using in-memory/session storage or AWS
 
 export async function POST(request: NextRequest) {
   try {

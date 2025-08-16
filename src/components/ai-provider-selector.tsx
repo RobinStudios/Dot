@@ -107,3 +107,5 @@ export function AIProviderSelector({ onGenerate, isGenerating }: AIProviderSelec
     </div>
   )
 }
+
+export default AIProviderSelector;

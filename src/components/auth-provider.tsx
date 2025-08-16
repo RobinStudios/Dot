@@ -242,6 +242,4 @@ export function LoginModal({ isOpen, onClose }: { isOpen: boolean; onClose: () =
       </div>
     </div>
   );
-    </div>
-  )
 }
