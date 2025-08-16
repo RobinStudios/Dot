@@ -6,7 +6,7 @@ const exportEngine = new BulkExportEngine();
 export async function GET(request: NextRequest) {
   try {
     // In a real implementation, filter by user
-    const jobs = []; // exportEngine.getUserJobs(userId);
+    const jobs: any[] = []; // exportEngine.getUserJobs(userId);
     
     return NextResponse.json({ jobs });
   } catch (error: any) {

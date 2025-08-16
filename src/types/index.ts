@@ -13,6 +13,10 @@ export interface DesignMockup {
   isPublic: boolean;
   tags: string[];
   collaborators: string[];
+  cluster?: string;
+  overallScore?: number;
+  styleScore?: number;
+  accessibilityScore?: number;
 }
 
 export interface Layout {
@@ -92,6 +96,12 @@ export interface ElementStyle {
   opacity?: number;
   transform?: string;
   filter?: string;
+  fontFamily?: string;
+  fontSize?: number;
+  fontWeight?: number;
+  lineHeight?: number;
+  color?: string;
+  textAlign?: 'left' | 'center' | 'right' | 'justify';
 }
 
 export interface Animation {
