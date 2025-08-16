@@ -1,6 +1,20 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { verifyToken } from './lib/auth';
 
 export function middleware(request: NextRequest) {
+  // Authentication
+  const authHeader = request.headers.get('authorization');
+  const token = authHeader?.split(' ')[1];
+
+  if (!token) {
+    return new NextResponse(JSON.stringify({ error: 'Unauthorized' }), { status: 401 });
+  }
+
+  const decoded = verifyToken(token);
+  if (!decoded) {
+    return new NextResponse(JSON.stringify({ error: 'Unauthorized' }), { status: 401 });
+  }
+
   const response = NextResponse.next();
 
   // CSRF Protection
@@ -23,5 +37,5 @@ export function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: '/api/:path*',
+  matcher: '/api/((?!auth).*)',
 };

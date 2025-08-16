@@ -1,20 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { loginUser } from '../../../../lib/auth';
 
 export async function POST(request: NextRequest) {
   try {
     const { email, password } = await request.json();
-
-    const user = {
-      id: '1',
-      name: 'Demo User',
-      email: email,
-      plan: 'pro'
-    };
-
-    const token = Buffer.from(`${user.id}:${email}`).toString('base64');
-
-    return NextResponse.json({ token, user });
-  } catch (error) {
-    return NextResponse.json({ error: 'Login failed' }, { status: 401 });
+    const result = await loginUser(email, password);
+    return NextResponse.json(result);
+  } catch (error: any) {
+    if (error.message === 'Invalid credentials' || error.message === 'Missing required fields') {
+      return NextResponse.json({ error: error.message }, { status: 401 });
+    }
+    return NextResponse.json({ error: 'Login failed' }, { status: 500 });
   }
 }
