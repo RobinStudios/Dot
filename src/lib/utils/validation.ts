@@ -21,7 +21,15 @@ export function sanitizeLogData(data: any): string {
 }
 
 export function validateEnvironmentVars(): void {
-  const required = ['NEXT_PUBLIC_AWS_REGION', 'NEXT_PUBLIC_COGNITO_IDENTITY_POOL_ID'];
+  const required = [
+    'NEXT_PUBLIC_AWS_REGION',
+    'NEXT_PUBLIC_COGNITO_IDENTITY_POOL_ID',
+    'AWS_REGION',
+    'AWS_ACCESS_KEY_ID',
+    'AWS_SECRET_ACCESS_KEY',
+    'AWS_BEDROCK_MODEL_ID',
+    'AWS_BEDROCK_IMAGE_MODEL_ID'
+  ];
   
   for (const envVar of required) {
     if (!process.env[envVar]) {

@@ -71,13 +71,19 @@ A comprehensive AI-driven graphic design tool that generates complete design moc
    npm install
    ```
 
-3. **Configure AWS settings**
-   Update `next.config.js` with your AWS configuration:
-   ```javascript
-   env: {
-     NEXT_PUBLIC_AWS_REGION: 'us-east-1',
-     NEXT_PUBLIC_COGNITO_IDENTITY_POOL_ID: 'us-east-1:your-identity-pool-id',
-   }
+3. **Configure Environment Variables**
+   Create a `.env.local` file in the root of the project and add the following variables:
+   ```
+   # AWS Configuration (Public - safe for client-side)
+   NEXT_PUBLIC_AWS_REGION=us-east-1
+   NEXT_PUBLIC_COGNITO_IDENTITY_POOL_ID=us-east-1:your-identity-pool-id
+
+   # AWS Configuration (Server-side only - DO NOT EXPOSE TO CLIENT)
+   AWS_REGION=us-east-1
+   AWS_ACCESS_KEY_ID=your_aws_access_key_id
+   AWS_SECRET_ACCESS_KEY=your_aws_secret_access_key
+   AWS_BEDROCK_MODEL_ID=anthropic.claude-3-sonnet-20240229-v1:0
+   AWS_BEDROCK_IMAGE_MODEL_ID=stability.stable-diffusion-xl-v1
    ```
 
 4. **Run the development server**
