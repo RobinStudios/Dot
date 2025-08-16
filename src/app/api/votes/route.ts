@@ -1,12 +1,10 @@
-
 import { NextRequest } from 'next/server';
 import { logError, apiError, apiSuccess } from '@/lib/utils/api-helpers';
 import { authService } from '@/lib/auth/auth';
 import { rateLimit } from '@/lib/security/rate-limit';
 import { validateCSRF } from '@/lib/security/csrf';
 import { z } from 'zod';
-// TODO: Replace with persistent storage
-const votes = new Map<string, any[]>();
+import { addVote, removeVote, getVotes } from '@/lib/db/votes';
 
 export async function POST(request: NextRequest) {
   try {
@@ -33,25 +31,13 @@ export async function POST(request: NextRequest) {
     });
     const body = await request.json();
     const { mockupId, teamId, action } = VoteRequestSchema.parse(body);
-    const teamKey = `${teamId}:${mockupId}`;
-    const currentVotes = votes.get(teamKey) || [];
     if (action === 'vote') {
-      if (!currentVotes.some(v => v.userId === user.id)) {
-        currentVotes.push({
-          userId: user.id,
-          userName: user.name || '',
-          timestamp: new Date().toISOString()
-        });
-        votes.set(teamKey, currentVotes);
-      }
+      await addVote(teamId, mockupId, user.id, user.name || '');
     } else {
-      const filteredVotes = currentVotes.filter(v => v.userId !== user.id);
-      votes.set(teamKey, filteredVotes);
+      await removeVote(teamId, mockupId, user.id);
     }
-    return apiSuccess({ 
-      success: true, 
-      votes: votes.get(teamKey)?.length || 0 
-    });
+    const votesList = await getVotes(teamId, mockupId);
+    return apiSuccess({ success: true, votes: votesList.length });
   } catch (error) {
     if (error instanceof z.ZodError) {
       return apiError('Invalid input data', 400);
@@ -78,25 +64,13 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const teamId = searchParams.get('teamId');
     const mockupId = searchParams.get('mockupId');
-    if (!teamId) {
-      return apiError('Team ID required', 400);
+    if (!teamId || !mockupId) {
+      return apiError('Missing teamId or mockupId', 400);
     }
-    if (mockupId) {
-      const teamKey = `${teamId}:${mockupId}`;
-      const mockupVotes = votes.get(teamKey) || [];
-      return apiSuccess({ votes: mockupVotes });
-    } else {
-      const teamVotes = Array.from(votes.entries())
-        .filter(([key]) => key.startsWith(`${teamId}:`))
-        .reduce((acc, [key, voteList]) => {
-          const mockupId = key.split(':')[1];
-          acc[mockupId] = voteList;
-          return acc;
-        }, {} as Record<string, any[]>);
-      return apiSuccess({ teamVotes });
-    }
+    const votesList = await getVotes(teamId, mockupId);
+    return apiSuccess({ votes: votesList });
   } catch (error) {
     logError('VotesAPI-GET', error);
-    return apiError('Failed to retrieve votes', 500);
+    return apiError('Failed to fetch votes', 500);
   }
 }
