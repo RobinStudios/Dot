@@ -8,7 +8,7 @@ const client = new BedrockRuntimeClient({
 
 export interface AgentTask {
   id: string;
-  type: 'design' | 'code' | 'brand' | 'export';
+  type: 'design' | 'code' | 'brand' | 'export' | 'image';
   prompt: string;
   context?: any;
 }
@@ -33,6 +33,8 @@ export class AgentExecutor {
           return await this.executeBrandTask(task);
         case 'export':
           return await this.executeExportTask(task);
+        case 'image':
+          return await this.executeImageTask(task);
         default:
           return { success: false, error: 'Unknown task type' };
       }
@@ -41,9 +43,29 @@ export class AgentExecutor {
     }
   }
 
+  private async executeImageTask(task: AgentTask): Promise<AgentResult> {
+    const command = new InvokeModelCommand({
+      modelId: process.env.AWS_BEDROCK_IMAGE_MODEL_ID || 'stability.stable-diffusion-xl-v1',
+      body: JSON.stringify({
+        text_prompts: [{ text: task.prompt }],
+        cfg_scale: 10,
+        seed: 0,
+        steps: 50,
+      }),
+      contentType: 'application/json',
+      accept: 'application/json',
+    });
+
+    const response = await client.send(command);
+    const result = JSON.parse(new TextDecoder().decode(response.body));
+
+    const image = result.artifacts[0].base64;
+    return { success: true, data: { image } };
+  }
+
   private async executeDesignTask(task: AgentTask): Promise<AgentResult> {
     const command = new InvokeModelCommand({
-      modelId: 'anthropic.claude-3-sonnet-20240229-v1:0',
+      modelId: process.env.AWS_BEDROCK_MODEL_ID || 'anthropic.claude-3-sonnet-20240229-v1:0',
       body: JSON.stringify({
         anthropic_version: 'bedrock-2023-05-31',
         max_tokens: 3000,
@@ -90,7 +112,7 @@ Return JSON with design specifications:
 
   private async executeCodeTask(task: AgentTask): Promise<AgentResult> {
     const command = new InvokeModelCommand({
-      modelId: 'anthropic.claude-3-sonnet-20240229-v1:0',
+      modelId: process.env.AWS_BEDROCK_MODEL_ID || 'anthropic.claude-3-sonnet-20240229-v1:0',
       body: JSON.stringify({
         anthropic_version: 'bedrock-2023-05-31',
         max_tokens: 4000,
@@ -127,7 +149,7 @@ Return only the component code:`
 
   private async executeBrandTask(task: AgentTask): Promise<AgentResult> {
     const command = new InvokeModelCommand({
-      modelId: 'anthropic.claude-3-sonnet-20240229-v1:0',
+      modelId: process.env.AWS_BEDROCK_MODEL_ID || 'anthropic.claude-3-sonnet-20240229-v1:0',
       body: JSON.stringify({
         anthropic_version: 'bedrock-2023-05-31',
         max_tokens: 2000,

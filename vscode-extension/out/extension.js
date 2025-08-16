@@ -1,6 +1,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.deactivate = exports.activate = void 0;
+exports.activate = activate;
+exports.deactivate = deactivate;
 const vscode = require("vscode");
 function activate(context) {
     const disposable = vscode.commands.registerCommand('aiDesigner.open', () => {
@@ -19,7 +20,6 @@ function activate(context) {
     });
     context.subscriptions.push(disposable);
 }
-exports.activate = activate;
 function getWebviewContent() {
     return `<!DOCTYPE html>
 <html lang="en">
@@ -84,5 +84,4 @@ async function exportToWorkspace(code, fileName) {
     vscode.window.showTextDocument(document);
 }
 function deactivate() { }
-exports.deactivate = deactivate;
 //# sourceMappingURL=extension.js.map
