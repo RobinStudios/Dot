@@ -11,11 +11,8 @@ export interface AIAgent {
   isFineTuned?: boolean;
 }
 
-export interface AgentTask {
-  type: 'design_generation' | 'asset_creation' | 'code_export' | 'copywriting' | 'branding' | 'ui_optimization' | 'bulk_export';
-  input: any;
-  context?: any;
-}
+import type { AgentTask } from '../../types';
+export type { AgentTask };
 
 export class AgentRegistry {
   private agents: Map<string, AIAgent> = new Map();

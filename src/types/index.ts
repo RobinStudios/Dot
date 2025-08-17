@@ -335,3 +335,11 @@ export interface WorkflowTrigger {
   type: 'manual' | 'schedule' | 'webhook' | 'event';
   config: Record<string, any>;
 }
+
+export interface AgentTask {
+  id: string;
+  type: 'design' | 'code' | 'brand' | 'export' | 'image' | 'design_generation' | 'asset_creation' | 'code_export' | 'copywriting' | 'branding' | 'ui_optimization' | 'bulk_export';
+  prompt?: string;
+  input?: any;
+  context?: any;
+}

@@ -9,7 +9,7 @@
     "start": "next start",
     "lint": "next lint",
     "lint:fix": "next lint --fix",
-    "mobile:build": "next build && npx cap sync",
+    "mobile:build": "npx cap sync",
     "mobile:android": "npx cap run android",
     "mobile:ios": "npx cap run ios",
     "extension:build": "node build-extension.js",

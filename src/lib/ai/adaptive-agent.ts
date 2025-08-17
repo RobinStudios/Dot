@@ -1,4 +1,5 @@
-import { AIAgent, AgentTask } from './agent-registry';
+import { AIAgent } from './agent-registry';
+import { AgentTask } from '../../types';
 
 export interface AdaptiveContext {
   userPreferences: Record<string, any>;
@@ -17,13 +18,17 @@ export interface ModularPack {
   isInstalled: boolean;
 }
 
+import { AgentRegistry } from './agent-registry';
+
 export class AdaptiveAgent {
   private context: AdaptiveContext;
   private installedPacks: Map<string, ModularPack> = new Map();
   private learningData: Map<string, any> = new Map();
+  private agentRegistry: AgentRegistry;
 
   constructor(context: AdaptiveContext) {
     this.context = context;
+    this.agentRegistry = new AgentRegistry();
     this.initializeCorePacks();
   }
 
@@ -96,11 +101,19 @@ export class AdaptiveAgent {
     const performanceWeights = this.context.performanceMetrics;
     const userPrefs = this.context.userPreferences;
     
+    const allAgents = this.agentRegistry.getAllAgents();
     return agentIds
-      .map(id => ({ id, score: this.calculateAgentScore(id, task, performanceWeights, userPrefs) }))
+      .map(id => {
+        const agent = allAgents.find(a => a.id === id);
+        return {
+          agent,
+          score: this.calculateAgentScore(id, task, performanceWeights, userPrefs),
+        };
+      })
+      .filter(item => item.agent)
       .sort((a, b) => b.score - a.score)
       .slice(0, 3)
-      .map(item => ({ id: item.id, name: `Agent-${item.id}` } as AIAgent));
+      .map(item => item.agent as AIAgent);
   }
 
   private calculateAgentScore(agentId: string, task: AgentTask, metrics: Record<string, number>, prefs: Record<string, any>): number {

@@ -4,9 +4,9 @@ import { KeyboardResize, KeyboardStyle } from '@capacitor/keyboard';
 const config: CapacitorConfig = {
   appId: 'com.aigraphicdesigner.app',
   appName: 'AI Graphic Designer',
-  webDir: 'out',
   server: {
-    androidScheme: 'https'
+    url: 'http://localhost:3000',
+    cleartext: true
   },
   plugins: {
     SplashScreen: {
