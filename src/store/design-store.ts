@@ -194,47 +194,37 @@ export const useDesignStore = create<DesignState>()(
 
       // AI Generation
       generateMockups: async (prompt: string) => {
-        set({ isGenerating: true })
+        set({ isGenerating: true });
         
         try {
-          // Simulate AI generation - in real app, this would call an AI service
-          const mockups: DesignMockup[] = []
-          
-          for (let i = 0; i < 10; i++) {
-            const mockup = createDefaultMockup(prompt)
-            mockup.title = `Design ${i + 1} - ${prompt.slice(0, 20)}...`
-            mockup.description = `AI-generated design based on: ${prompt}`
+          const { agentExecutor } = await import('@/lib/ai/agent-executor');
+          const result = await agentExecutor.executeTask({
+            id: `task-${Date.now()}`,
+            type: 'design',
+            prompt,
+          });
+
+          if (result.success) {
+            const newMockup = createDefaultMockup(prompt);
+            newMockup.title = `AI Design - ${prompt.slice(0, 20)}...`;
+            newMockup.elements = result.data.elements;
+            newMockup.layout = result.data.layout;
+            newMockup.colorScheme = result.data.colorScheme;
+            newMockup.typography = result.data.typography;
             
-            // Add some sample elements
-            mockup.elements = [
-              {
-                id: `text-${i}-1`,
-                type: 'text',
-                position: { x: 100, y: 100 },
-                size: { width: 300, height: 50 },
-                style: { color: mockup.colorScheme.text },
-                content: `Sample Text ${i + 1}`,
-              },
-              {
-                id: `shape-${i}-1`,
-                type: 'shape',
-                position: { x: 100, y: 200 },
-                size: { width: 200, height: 150 },
-                style: { backgroundColor: mockup.colorScheme.primary },
-              },
-            ]
-            
-            mockups.push(mockup)
+            set((state) => ({
+              mockups: [...state.mockups, newMockup],
+              currentMockup: newMockup,
+            }));
+          } else {
+            console.error('AI generation failed:', result.error);
+            // Here you might want to set an error state
           }
-          
-          set((state) => ({
-            mockups: [...state.mockups, ...mockups],
-            currentMockup: mockups[0],
-            isGenerating: false,
-          }))
         } catch (error) {
-          console.error('Error generating mockups:', error)
-          set({ isGenerating: false })
+          console.error('Error generating mockups:', error);
+          // Here you might want to set an error state
+        } finally {
+          set({ isGenerating: false });
         }
       },
 

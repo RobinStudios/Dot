@@ -1,19 +1,34 @@
-export interface MockupTemplate {
-  id: string;
-  name: string;
-  category: 'landing' | 'dashboard' | 'ecommerce' | 'portfolio' | 'blog';
-  preview: string;
-  code: string;
-  aiPrompts: string[];
-}
+import { DesignMockup } from '@/types';
 
-export const MOCKUP_TEMPLATES: MockupTemplate[] = [
-  {
-    id: 'saas-landing',
-    name: 'SaaS Landing Page',
-    category: 'landing',
-    preview: '/templates/saas-landing.png',
-    code: `export default function SaaSLanding() {
+const createMockupFromTemplate = (id: string, name: string, code: string, preview: string): DesignMockup => ({
+  id,
+  title: name,
+  description: `A template for a ${name}.`,
+  prompt: `A ${name}`,
+  layout: { type: 'grid', columns: 12, rows: 8, gap: 16, padding: 24, breakpoints: [], gridTemplate: '' },
+  typography: { fontFamily: 'Inter', fontSize: 16, fontWeight: 400, lineHeight: 1.5, letterSpacing: 0, textAlign: 'left', color: '#000' },
+  colorScheme: { primary: '#000', secondary: '#000', accent: '#000', background: '#fff', text: '#000', surface: '#fff', error: '#f00', warning: '#f00', success: '#0f0', palette: [] },
+  elements: [{
+    id: 'code',
+    type: 'text',
+    content: code,
+    position: { x: 0, y: 0 },
+    size: { width: 0, height: 0 },
+    style: {},
+  }],
+  thumbnail: preview,
+  createdAt: new Date(),
+  updatedAt: new Date(),
+  isPublic: true,
+  tags: [name.split(' ')[0].toLowerCase()],
+  collaborators: [],
+});
+
+export const MOCKUP_TEMPLATES: DesignMockup[] = [
+  createMockupFromTemplate(
+    'saas-landing',
+    'SaaS Landing Page',
+    `export default function SaaSLanding() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
       <nav className="px-6 py-4 flex justify-between items-center">
@@ -37,14 +52,12 @@ export const MOCKUP_TEMPLATES: MockupTemplate[] = [
     </div>
   );
 }`,
-    aiPrompts: ['Change the color scheme to green', 'Add a features section', 'Make it more modern', 'Add testimonials']
-  },
-  {
-    id: 'ecommerce-product',
-    name: 'E-commerce Product Page',
-    category: 'ecommerce',
-    preview: '/templates/ecommerce-product.png',
-    code: `export default function ProductPage() {
+    '/templates/saas-landing.png'
+  ),
+  createMockupFromTemplate(
+    'ecommerce-product',
+    'E-commerce Product Page',
+    `export default function ProductPage() {
   return (
     <div className="max-w-6xl mx-auto px-4 py-8">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
@@ -68,14 +81,12 @@ export const MOCKUP_TEMPLATES: MockupTemplate[] = [
     </div>
   );
 }`,
-    aiPrompts: ['Add product reviews', 'Change to clothing product', 'Add size selector', 'Make it luxury style']
-  },
-  {
-    id: 'dashboard-analytics',
-    name: 'Analytics Dashboard',
-    category: 'dashboard',
-    preview: '/templates/dashboard-analytics.png',
-    code: `export default function Dashboard() {
+    '/templates/ecommerce-product.png'
+  ),
+  createMockupFromTemplate(
+    'dashboard-analytics',
+    'Analytics Dashboard',
+    `export default function Dashboard() {
   return (
     <div className="min-h-screen bg-gray-50">
       <nav className="bg-white shadow px-6 py-4">
@@ -96,10 +107,10 @@ export const MOCKUP_TEMPLATES: MockupTemplate[] = [
     </div>
   );
 }`,
-    aiPrompts: ['Add dark mode', 'Include more charts', 'Make it mobile-first', 'Add sidebar navigation']
-  }
+    '/templates/dashboard-analytics.png'
+  )
 ];
 
-export function getMockupById(id: string): MockupTemplate | undefined {
+export function getMockupById(id: string): DesignMockup | undefined {
   return MOCKUP_TEMPLATES.find(template => template.id === id);
 }
